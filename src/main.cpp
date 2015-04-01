@@ -52,25 +52,18 @@ int main(int argc, void* argv) {
 	rs.SetViewportSize(800, 600);
 
 	vv::VoxelVolume voxvol;
+	auto shader_files = std::list<std::pair<vv::Shader::ShaderType, std::string>> {
+		std::make_pair(vv::Shader::VERTEX, "basic.vert"), std::make_pair(vv::Shader::FRAGMENT, "basic.frag"),
+	};
+	auto s = vv::Shader::CreateFromFile("shader1", shader_files);
+	auto basic_fill = vv::Material::Create("material_basic", s);
 
-	auto s = std::make_shared<vv::Shader>();
-	s->LoadFromFile(vv::Shader::VERTEX, "basic.vert");
-	s->LoadFromFile(vv::Shader::FRAGMENT, "basic.frag");
-	s->Build();
-	vv::ShaderMap::Set("shader1", s);
-
-	auto basic_fill = std::make_shared<vv::Material>(s);
-	vv::MaterialMap::Set("material_basic", basic_fill);
-
-	auto s_overlay = std::make_shared<vv::Shader>();
-	s_overlay->LoadFromFile(vv::Shader::VERTEX, "basic.vert");
-	s_overlay->LoadFromFile(vv::Shader::FRAGMENT, "overlay.frag");
-	s_overlay->Build();
-	vv::ShaderMap::Set("shader_overlay", s_overlay);
-
-	auto overlay = std::make_shared<vv::Material>(s_overlay);
-	overlay->SetFillMode(GL_LINE);
-	vv::MaterialMap::Set("material_overlay", overlay);
+	shader_files = std::list<std::pair<vv::Shader::ShaderType, std::string>> {
+		std::make_pair(vv::Shader::VERTEX, "basic.vert"), std::make_pair(vv::Shader::FRAGMENT, "overlay.frag"),
+	};
+	auto s_overlay = vv::Shader::CreateFromFile("shader_overlay", shader_files);
+	auto overlay = vv::Material::Create("material_overlay", s_overlay);
+	overlay.lock()->SetFillMode(GL_LINE);
 
 	auto voxvol_transform = std::make_shared<vv::Transform>();
 	vv::TransformMap::Set(100, voxvol_transform);
