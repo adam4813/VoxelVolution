@@ -6,19 +6,11 @@
 #include "vertexbuffer.hpp"
 
 namespace vv {
-	class Material;
-
 	class PolygonMeshData;
 	typedef Multiton<std::string, std::shared_ptr<PolygonMeshData>> PolygonMeshMap;
 
 	class PolygonMeshData {
 	public:
-		// Sets the Material, for specified submesh.
-		void SetMaterial(std::weak_ptr<Material> m, size_t submesh = 0);
-
-		// Returns the Material, for specified submesh.
-		std::weak_ptr<Material> GetMaterial(size_t submesh = 0);
-
 		// Add a single vertex to the vector, for the specified submesh.
 		void AddVertex(Vertex v, size_t submesh = 0);
 
@@ -41,7 +33,6 @@ namespace vv {
 		// return is a weak_ptr to the created Material.
 		static std::weak_ptr<PolygonMeshData> Create(const std::string name);
 	private:
-		std::map<size_t, std::weak_ptr<Material>> materials;
 		std::map<size_t, std::vector<Vertex>> verts;
 		std::map<size_t, std::vector<unsigned int>> indicies;
 	};

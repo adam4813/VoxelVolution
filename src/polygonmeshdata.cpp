@@ -1,17 +1,6 @@
 #include "polygonmeshdata.hpp"
 
 namespace vv {
-	void PolygonMeshData::SetMaterial(std::weak_ptr<Material> m, size_t submesh) {
-		this->materials[submesh] = m;
-	}
-	// Returns the Material for specified submesh.
-	std::weak_ptr<Material> PolygonMeshData::GetMaterial(size_t submesh) {
-		if (this->materials.find(submesh) != this->materials.end()) {
-			return this->materials[submesh];
-		}
-		return std::weak_ptr<Material>();
-	}
-
 	void PolygonMeshData::AddVertex(Vertex v, size_t submesh) {
 		this->verts[submesh].push_back(v);
 	}
