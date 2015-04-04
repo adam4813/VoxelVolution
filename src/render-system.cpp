@@ -1,5 +1,6 @@
 #include "render-system.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <iostream>
 #include <thread>
 
@@ -21,10 +22,11 @@ namespace vv {
 
 	RenderSystem::RenderSystem() : current_view(0) {
 		auto err = glGetError();
+		// If there is an error that means something went wrong when creating the context.
 		if (err) {
 			return;
 		}
-		// Use the GL3 way to get the version number
+		// Use the GL3 way to get the version number.
 		int gl_version[3];
 		glGetIntegerv(GL_MAJOR_VERSION, &gl_version[0]);
 		glGetIntegerv(GL_MINOR_VERSION, &gl_version[1]);
@@ -94,7 +96,7 @@ namespace vv {
 				case RS_COMMAND::VB_ADD:
 					{
 						auto cast_command =
-							std::static_pointer_cast<RenderCommand<std::weak_ptr<vv::VertexBuffer>>>(action);
+							std::static_pointer_cast<RenderCommand<std::weak_ptr<VertexBuffer>>>(action);
 						if (cast_command->data.lock()) {
 							cast_command->data.reset();
 						}
@@ -194,11 +196,13 @@ namespace vv {
 	void RenderSystem::UpdateModelMatrix(const GUID entity_id) {
 		auto model_matrix = ModelMatrixMap::Get(entity_id);
 		auto transform = TransformMap::Get(entity_id);
+
+		// If the model matrix doesn't exist, but a transform does make the model matrix.
 		if (!model_matrix && transform) {
 			model_matrix = std::make_shared<ModelMatrix>();
 			ModelMatrixMap::Set(entity_id, model_matrix);
 		}
-		else if (!transform) {
+		else if (!transform) { // Nothing to make a model matrix with.
 			return;
 		}
 
@@ -206,6 +210,8 @@ namespace vv {
 		auto camera_orientation = transform->GetOrientation();
 		model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
 			glm::mat4_cast(camera_orientation);
+
+		// Check if there is a view associated with the entity_id and update it as well.
 		if (this->views.find(entity_id) != this->views.end()) {
 			UpdateViewMatrix(entity_id);
 		}
@@ -217,6 +223,7 @@ namespace vv {
 
 	void RenderSystem::UpdateViewMatrix(const GUID entity_id) {
 		auto model_matrix = ModelMatrixMap::Get(entity_id);
+		// Check here in case this was called from somewhere besides UpdateModelMatrix()
 		if (!model_matrix) {
 			return;
 		}

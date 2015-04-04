@@ -3,10 +3,7 @@
 #include <memory>
 #include <list>
 #include <map>
-#include <atomic>
-#include <queue>
 #include <glm/mat4x4.hpp>
-#include <glm/gtc/quaternion.hpp>
 
 #ifndef __APPLE__
 #include <GL/glew.h>
@@ -55,7 +52,6 @@ namespace vv {
 		void Update(const double delta);
 
 		void AddVertexBuffer(const std::weak_ptr<Material> mat, const std::weak_ptr<VertexBuffer> buffer, const GUID entity_id);
-
 	protected:
 		void ProcessCommandQueue();
 

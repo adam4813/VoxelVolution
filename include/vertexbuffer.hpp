@@ -66,7 +66,7 @@ namespace vv {
 			if (this->index_count >= indicies.size()) {
 				auto* buffer = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0, indicies.size() * sizeof(GLuint), GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 				if (buffer) {
-					memcpy(buffer, &indicies[0], indicies.size() * sizeof(Vertex));
+					memcpy(buffer, &indicies[0], indicies.size() * sizeof(GLuint));
 					glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 				}
 				else {
