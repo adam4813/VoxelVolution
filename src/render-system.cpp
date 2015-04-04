@@ -84,7 +84,7 @@ namespace vv {
 					UpdateModelMatrix(action->entity_id);
 					{
 						auto cast_callback =
-							std::static_pointer_cast<Callback<std::weak_ptr<ModelMatrix>>>(action->callback);
+							std::static_pointer_cast<CallbackkHolder<std::weak_ptr<ModelMatrix>>>(action->callback);
 						if (cast_callback) {
 							cast_callback->callback(ModelMatrixMap::Get(action->entity_id));
 						}

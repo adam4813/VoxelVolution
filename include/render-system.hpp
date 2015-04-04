@@ -32,7 +32,8 @@ namespace vv {
 
 	template <typename T>
 	struct RenderCommand : Command < RS_COMMAND > {
-		RenderCommand(const RS_COMMAND rs_c, const GUID entity_id, std::shared_ptr<CallbackHolder> callback = nullptr, T data = nullptr) :
+		RenderCommand(const RS_COMMAND rs_c, const GUID entity_id,
+			std::shared_ptr<Callback> callback = nullptr, T data = nullptr) :
 			Command(rs_c, entity_id, callback), data(data) { }
 		T data;
 	};
@@ -67,6 +68,7 @@ namespace vv {
 		std::map<GUID, glm::mat4> views;
 		GUID current_view;
 		unsigned int window_width, window_height;
-		std::map<std::weak_ptr<Material>, std::pair<std::weak_ptr<VertexBuffer>, std::list<GUID>>, std::owner_less<std::weak_ptr<Material>>> buffers;
+		std::map<std::weak_ptr<Material>, std::pair<std::weak_ptr<VertexBuffer>,
+			std::list<GUID>>, std::owner_less<std::weak_ptr<Material>>> buffers;
 	};
 }

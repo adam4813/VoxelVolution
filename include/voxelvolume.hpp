@@ -23,7 +23,7 @@ namespace vv {
 
 	struct VoxelCommand : Command < VOXEL_COMMAND > {
 		VoxelCommand(const VOXEL_COMMAND voxel_c, const GUID entity_id,
-			std::shared_ptr<CallbackHolder> callback = nullptr,
+			std::shared_ptr<Callback> callback = nullptr,
 			std::tuple<std::int16_t, std::int16_t, std::int16_t> position = std::make_tuple(0, 0, 0)) :
 			Command(voxel_c, entity_id, callback) {
 			this->row = std::get<0>(position);
@@ -61,9 +61,11 @@ namespace vv {
 		std::weak_ptr<PolygonMeshData> GetMesh();
 
 		// Creates a VoxelVolume for entity_id and uses a PolygonMeshData with name and into submesh.
-		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id, const std::string name, const size_t submesh = 0);
+		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id,
+			const std::string name, const size_t submesh = 0);
 		// Creates a VoxelVolume for entity_id and uses PolygonMeshData and into submesh.
-		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh = std::weak_ptr<PolygonMeshData>(), const size_t submesh = 0);
+		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id,
+			std::weak_ptr<PolygonMeshData> mesh = std::weak_ptr<PolygonMeshData>(), const size_t submesh = 0);
 	private:
 		std::unordered_map<std::int64_t, std::shared_ptr<Voxel>> voxels;
 		std::weak_ptr<PolygonMeshData> mesh;

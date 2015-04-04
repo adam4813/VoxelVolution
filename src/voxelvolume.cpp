@@ -3,7 +3,8 @@
 #include "polygonmeshdata.hpp"
 
 namespace vv {
-	std::atomic<std::queue<std::shared_ptr<Command<VOXEL_COMMAND>>>*> VoxelVolume::global_queue = new std::queue<std::shared_ptr<Command<VOXEL_COMMAND>>>();
+	std::atomic<std::queue<std::shared_ptr<Command<VOXEL_COMMAND>>>*> VoxelVolume::global_queue =
+		new std::queue<std::shared_ptr<Command<VOXEL_COMMAND>>>();
 
 	VoxelVolume::VoxelVolume(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) :
 		entity_id(entity_id), mesh(mesh), submesh(submesh) { }
@@ -12,19 +13,26 @@ namespace vv {
 
 	void VoxelVolume::AddVoxel(const std::int16_t row, const std::int16_t column, const std::int16_t slice) {
 		Voxel v;
-		std::int64_t index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) + (static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
+		std::int64_t index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) +
+			(static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
 
 		if (this->voxels.find(index) == this->voxels.end()) {
 			this->voxels[index] = std::make_shared<Voxel>();
 
 			// Since we are adding a voxel we must set the new voxels neighbors.
 			std::int64_t up_index, down_index, left_index, right_index, back_index, front_index;
-			up_index = (static_cast<std::uint64_t>((row + 1) & 0xFFFF) << 32) + (static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
-			down_index = (static_cast<std::uint64_t>((row - 1) & 0xFFFF) << 32) + (static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
-			left_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) + (static_cast<std::uint32_t>((column - 1) & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
-			right_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) + (static_cast<std::uint32_t>((column + 1) & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
-			front_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) + (static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>((slice - 1) & 0xFFFF);
-			back_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) + (static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>((slice + 1) & 0xFFFF);
+			up_index = (static_cast<std::uint64_t>((row + 1) & 0xFFFF) << 32) +
+				(static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
+			down_index = (static_cast<std::uint64_t>((row - 1) & 0xFFFF) << 32) +
+				(static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
+			left_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) +
+				(static_cast<std::uint32_t>((column - 1) & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
+			right_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) +
+				(static_cast<std::uint32_t>((column + 1) & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
+			front_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) +
+				(static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>((slice - 1) & 0xFFFF);
+			back_index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) +
+				(static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>((slice + 1) & 0xFFFF);
 
 			if (this->voxels.find(up_index) != this->voxels.end()) {
 				v.neighbors[Voxel::UP] = this->voxels[up_index];
@@ -54,7 +62,8 @@ namespace vv {
 	}
 
 	void VoxelVolume::RemoveVoxel(const std::int16_t row, const std::int16_t column, const std::int16_t slice) {
-		std::int64_t index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) + (static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
+		std::int64_t index = (static_cast<std::uint64_t>(row & 0xFFFF) << 32) +
+			(static_cast<std::uint32_t>(column & 0xFFFF) << 16) + static_cast<std::uint16_t>(slice & 0xFFFF);
 
 		if (this->voxels.find(index) != this->voxels.end()) {
 			std::weak_ptr<Voxel> v = this->voxels[index];
@@ -149,12 +158,13 @@ namespace vv {
 			}
 		}
 	}
-	
+
 	std::weak_ptr<PolygonMeshData> VoxelVolume::GetMesh() {
 		return this->mesh;
 	}
 
-	std::weak_ptr<VoxelVolume> VoxelVolume::Create(GUID entity_id, const std::string name, const size_t submesh) {
+	std::weak_ptr<VoxelVolume> VoxelVolume::Create(GUID entity_id,
+		const std::string name, const size_t submesh) {
 		std::weak_ptr<PolygonMeshData> mesh = PolygonMeshMap::Get(name);
 		if (!mesh.lock()) {
 			mesh = PolygonMeshData::Create(name);
@@ -164,7 +174,8 @@ namespace vv {
 		return voxvol;
 	}
 
-	std::weak_ptr<VoxelVolume> VoxelVolume::Create(GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) {
+	std::weak_ptr<VoxelVolume> VoxelVolume::Create(GUID entity_id,
+		std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) {
 		auto voxvol = std::make_shared<VoxelVolume>(entity_id, mesh, submesh);
 		VoxelVoumeMap::Set(entity_id, voxvol);
 		return voxvol;
