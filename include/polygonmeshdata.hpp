@@ -8,40 +8,38 @@
 namespace vv {
 	class Material;
 
+	class PolygonMeshData;
+	typedef Multiton<std::string, std::shared_ptr<PolygonMeshData>> PolygonMeshMap;
+
 	class PolygonMeshData {
 	public:
-		void SetMaterial(std::weak_ptr<Material> m, size_t submesh = 0) {
-			this->materials[submesh] = m;
-		}
+		// Sets the Material, for specified submesh.
+		void SetMaterial(std::weak_ptr<Material> m, size_t submesh = 0);
 
-		// Returns the Material for specified submesh.
-		std::weak_ptr<Material> GetMaterial(size_t submesh = 0) {
-			if (this->materials.find(submesh) != this->materials.end()) {
-				return this->materials[submesh];
-			}
-		}
+		// Returns the Material, for specified submesh.
+		std::weak_ptr<Material> GetMaterial(size_t submesh = 0);
 
-		void AddVertex(Vertex v, size_t submesh = 0) {
-			this->verts[submesh].push_back(v);
-		}
+		// Add a single vertex to the vector, for the specified submesh.
+		void AddVertex(Vertex v, size_t submesh = 0);
 
-		// Returns the vertex buffer for specified submesh.
-		const std::vector<Vertex>& GetVertexBuffer(size_t submesh = 0) {
-			if (this->verts.find(submesh) != this->verts.end()) {
-				return this->verts[submesh];
-			}
-		}
+		// Used to batch copy a vector of vertices, for the specified submesh.
+		void SetVerts(std::vector<Vertex>& verts, size_t submesh = 0);
 
-		void AddIndex(unsigned int i, size_t submesh = 0) {
-			this->indicies[submesh].push_back(i);
-		}
+		// Returns the vertex buffer, for specified submesh.
+		const std::vector<Vertex>* GetVertexBuffer(size_t submesh = 0);
 
-		// Returns the index buffer for specified submesh.
-		const std::vector<unsigned int>& GetIndexBuffer(size_t submesh = 0) {
-			if (this->indicies.find(submesh) != this->indicies.end()) {
-				return this->indicies[submesh];
-			}
-		}
+		// Add a single index to the vector, for the specified submesh.
+		void AddIndex(unsigned int i, size_t submesh = 0);
+		
+		// Used to batch copy a vector of indices, for the specified submesh.
+		void SetIndicies(std::vector<unsigned int>& indicies, size_t submesh = 0);
+
+		// Returns the index buffer, for specified submesh.
+		const std::vector<unsigned int>* GetIndexBuffer(size_t submesh = 0);
+
+		// Creates a Material from the given shader MaterialMap under name.
+		// return is a weak_ptr to the created Material.
+		static std::weak_ptr<PolygonMeshData> Create(const std::string name);
 	private:
 		std::map<size_t, std::weak_ptr<Material>> materials;
 		std::map<size_t, std::vector<Vertex>> verts;
