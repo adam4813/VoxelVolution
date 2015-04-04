@@ -18,8 +18,8 @@ namespace vv {
 
 	// Error helper function used by GLFW for error messaging.
 	// Currently outputs to std::cout.
-	static void ErrorCallback(int error, const char* description) {
-		std::cout << description << std::endl;
+	static void ErrorCallback(int error_no, const char* description) {
+		std::cout << "Error " << error_no << ": " << description << std::endl;
 	}
 
 	bool OS::InitializeWindow(const int width, const int height, const std::string title,

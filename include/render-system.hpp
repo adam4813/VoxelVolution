@@ -35,8 +35,8 @@ namespace vv {
 
 	template <typename T>
 	struct RenderCommand : Command < RS_COMMAND > {
-		RenderCommand(const RS_COMMAND rs_c, const GUID entity_id, T data) :
-			Command(rs_c, entity_id), data(data) { }
+		RenderCommand(const RS_COMMAND rs_c, const GUID entity_id, std::shared_ptr<CallbackHolder> callback = nullptr, T data = nullptr) :
+			Command(rs_c, entity_id, callback), data(data) { }
 		T data;
 	};
 
@@ -63,7 +63,7 @@ namespace vv {
 
 		void RemoveModelMatrix(const GUID entity_id);
 
-		void UpdateViewMatrix(const GUID eneity_id);
+		void UpdateViewMatrix(const GUID entity_id);
 
 		//void CreateVertexBuffer(GUID entity_id, const std::vector<Vertex>& verts, const std::vector<GLuint>& indices);
 	private:

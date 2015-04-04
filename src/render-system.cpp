@@ -16,7 +16,8 @@ namespace vv {
 
 	typedef Multiton<std::string, std::shared_ptr<Texture>> TextureMap;
 
-	std::atomic<std::queue<std::shared_ptr<Command<RS_COMMAND>>>*> RenderSystem::global_queue = new std::queue<std::shared_ptr<Command<RS_COMMAND>>>();
+	std::atomic<std::queue<std::shared_ptr<Command<RS_COMMAND>>>*> RenderSystem::global_queue =
+		new std::queue<std::shared_ptr<Command<RS_COMMAND>>>();
 
 	RenderSystem::RenderSystem() : current_view(0) {
 		auto err = glGetError();
@@ -79,14 +80,24 @@ namespace vv {
 				case RS_COMMAND::MODEL_MATRIX_ADD:
 				case RS_COMMAND::MODEL_MATRIX_UPDATE:
 					UpdateModelMatrix(action->entity_id);
+					{
+						auto cast_callback =
+							std::static_pointer_cast<Callback<std::weak_ptr<ModelMatrix>>>(action->callback);
+						if (cast_callback) {
+							cast_callback->callback(ModelMatrixMap::Get(action->entity_id));
+						}
+					}
 					break;
 				case RS_COMMAND::MODEL_MATRIX_REMOVE:
 					RemoveModelMatrix(action->entity_id);
 					break;
 				case RS_COMMAND::VB_ADD:
-					auto cast_command = std::static_pointer_cast<RenderCommand<std::weak_ptr<vv::VertexBuffer>>>(action);
-					if (cast_command->data.lock()) {
-						cast_command->data.reset();
+					{
+						auto cast_command =
+							std::static_pointer_cast<RenderCommand<std::weak_ptr<vv::VertexBuffer>>>(action);
+						if (cast_command->data.lock()) {
+							cast_command->data.reset();
+						}
 					}
 					break;
 			}
@@ -193,7 +204,8 @@ namespace vv {
 
 		auto camera_translation = transform->GetTranslation();
 		auto camera_orientation = transform->GetOrientation();
-		model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) * glm::mat4_cast(camera_orientation);
+		model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
+			glm::mat4_cast(camera_orientation);
 		if (this->views.find(entity_id) != this->views.end()) {
 			UpdateViewMatrix(entity_id);
 		}

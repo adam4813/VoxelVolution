@@ -77,11 +77,16 @@ int main(int argc, void* argv) {
 	auto vb = std::make_shared<vv::VertexBuffer>();
 	vv::VertexBufferMap::Set(100, vb);
 
-	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<short, short, short>>(vv::VOXEL_ADD, 100, std::tuple<short, short, short>(0, 1, 1));
-	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<short, short, short>>(vv::VOXEL_ADD, 100, std::tuple<short, short, short>(0, -1, 1));
-	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<short, short, short>>(vv::VOXEL_ADD, 100, std::tuple<short, short, short>(0, -1, 0));
-	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<short, short, short>>(vv::VOXEL_ADD, 100, std::tuple<short, short, short>(0, -1, -1));
-	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<short, short, short>>(vv::VOXEL_ADD, 100, std::tuple<short, short, short>(1, -1, 1));
+	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<std::int16_t, std::int16_t, std::int16_t>>
+		(vv::VOXEL_ADD, 100, nullptr, std::make_tuple(0, 1, 1));
+	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<std::int16_t, std::int16_t, std::int16_t>>
+		(vv::VOXEL_ADD, 100, nullptr, std::make_tuple(0, -1, 1));
+	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<std::int16_t, std::int16_t, std::int16_t>>
+		(vv::VOXEL_ADD, 100, nullptr, std::make_tuple(0, -1, 0));
+	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<std::int16_t, std::int16_t, std::int16_t>>
+		(vv::VOXEL_ADD, 100, nullptr, std::make_tuple(0, -1, -1));
+	vv::VoxelVolume::QueueCommand<vv::VoxelCommand, std::tuple<std::int16_t, std::int16_t, std::int16_t>>
+		(vv::VOXEL_ADD, 100, nullptr, std::make_tuple(1, -1, 1));
 
 	voxvol.Update(0.0);
 	vb->Buffer(voxvol.GetVertexBuffer(), voxvol.GetIndexBuffer());

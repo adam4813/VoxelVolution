@@ -20,8 +20,10 @@ namespace vv {
 	enum VOXEL_COMMAND { VOXEL_ADD, VOXEL_REMOVE };
 
 	struct VoxelCommand : Command < VOXEL_COMMAND > {
-		VoxelCommand(const VOXEL_COMMAND voxel_c, const GUID entity_id, std::tuple<std::int16_t, std::int16_t, std::int16_t> position) :
-			Command(voxel_c, entity_id) {
+		VoxelCommand(const VOXEL_COMMAND voxel_c, const GUID entity_id,
+			std::shared_ptr<CallbackHolder> callback = nullptr,
+			std::tuple<std::int16_t, std::int16_t, std::int16_t> position = std::make_tuple(0, 0, 0)) :
+			Command(voxel_c, entity_id, callback) {
 			this->row = std::get<0>(position);
 			this->column = std::get<1>(position);
 			this->slice = std::get<2>(position);
