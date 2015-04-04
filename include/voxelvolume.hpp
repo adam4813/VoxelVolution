@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <map>
+#include <memory>
 #include <vector>
 #include <queue>
 #include <cstdint>
@@ -10,6 +11,7 @@
 
 namespace vv {
 	struct Vertex;
+	class PolygonMeshData;
 
 	struct Voxel {
 		enum NEIGHBORS { UP = 0, DOWN, LEFT, RIGHT, FRONT, BACK };
@@ -31,9 +33,12 @@ namespace vv {
 		std::int16_t row, column, slice;
 	};
 
+	class VoxelVolume;
+	typedef Multiton<GUID, std::shared_ptr<VoxelVolume>> VoxelVoumeMap;
+
 	class VoxelVolume : public CommandQueue < VOXEL_COMMAND > {
 	public:
-		VoxelVolume();
+		VoxelVolume(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh = 0);
 		~VoxelVolume();
 
 	protected:
@@ -51,21 +56,18 @@ namespace vv {
 		void Update(double delta);
 
 		// Generates a vertex (and index) buffer for the current voxel state.
-		void UpdateVertexBuffers();
+		void UpdateMesh();
 
-		// Returns the vertex buffer.
-		const std::vector<Vertex>& GetVertexBuffer() {
-			return this->verts;
-		}
+		std::weak_ptr<PolygonMeshData> GetMesh();
 
-		// Returns the index buffer.
-		const std::vector<unsigned int>& GetIndexBuffer() {
-			return this->indicies;
-		}
+		// Creates a VoxelVolume for entity_id and uses a PolygonMeshData with name and into submesh.
+		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id, const std::string name, const size_t submesh = 0);
+		// Creates a VoxelVolume for entity_id and uses PolygonMeshData and into submesh.
+		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh = std::weak_ptr<PolygonMeshData>(), const size_t submesh = 0);
 	private:
-		std::unordered_map<long long, std::shared_ptr<Voxel>> voxels;
-		std::vector<Vertex> verts;
-		std::vector<unsigned int> indicies;
-		std::map<std::tuple<float, float, float>, unsigned int> index_list;
+		std::unordered_map<std::int64_t, std::shared_ptr<Voxel>> voxels;
+		std::weak_ptr<PolygonMeshData> mesh;
+		size_t submesh;
+		GUID entity_id;
 	};
 }
