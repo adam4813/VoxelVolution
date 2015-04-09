@@ -17,8 +17,8 @@ namespace vv {
 
 	typedef Multiton<std::string, std::shared_ptr<Texture>> TextureMap;
 
-	std::atomic<std::queue<std::shared_ptr<Command<RS_COMMAND>>>*> RenderSystem::global_queue =
-		new std::queue<std::shared_ptr<Command<RS_COMMAND>>>();
+	std::atomic<std::queue<std::shared_ptr<Command<RenderSystem>>>*> RenderSystem::global_queue =
+		new std::queue<std::shared_ptr<Command<RenderSystem>>>();
 
 	RenderSystem::RenderSystem() : current_view(0) {
 		auto err = glGetError();
@@ -60,50 +60,6 @@ namespace vv {
 			0.1f,
 			10000.0f
 			);
-	}
-
-	void RenderSystem::ProcessCommandQueue() {
-		this->local_queue = global_queue.exchange(this->local_queue);
-
-		while (!this->local_queue->empty()) {
-			auto action = this->local_queue->front();
-			this->local_queue->pop();
-
-			switch (action->command) {
-				case RS_COMMAND::VIEW_ACTIVATE:
-					this->current_view = action->entity_id;
-				case RS_COMMAND::VIEW_ADD:
-				case RS_COMMAND::VIEW_UPDATE:
-					UpdateViewMatrix(action->entity_id);
-					break;
-				case RS_COMMAND::VIEW_REMOVE:
-					this->views.erase(action->entity_id);
-					break;
-				case RS_COMMAND::MODEL_MATRIX_ADD:
-				case RS_COMMAND::MODEL_MATRIX_UPDATE:
-					UpdateModelMatrix(action->entity_id);
-					{
-						auto cast_callback =
-							std::static_pointer_cast<CallbackkHolder<std::weak_ptr<ModelMatrix>>>(action->callback);
-						if (cast_callback) {
-							cast_callback->callback(ModelMatrixMap::Get(action->entity_id));
-						}
-					}
-					break;
-				case RS_COMMAND::MODEL_MATRIX_REMOVE:
-					RemoveModelMatrix(action->entity_id);
-					break;
-				case RS_COMMAND::VB_ADD:
-					{
-						auto cast_command =
-							std::static_pointer_cast<RenderCommand<std::weak_ptr<VertexBuffer>>>(action);
-						if (cast_command->data.lock()) {
-							cast_command->data.reset();
-						}
-					}
-					break;
-			}
-		}
 	}
 
 	void RenderSystem::Update(const double delta) {
@@ -193,7 +149,7 @@ namespace vv {
 		this->buffers[mat] = std::make_pair(buffer, std::move(entity_list));
 	}
 
-	void RenderSystem::UpdateModelMatrix(const GUID entity_id) {
+	std::weak_ptr<ModelMatrix> RenderSystem::UpdateModelMatrix(const GUID entity_id) {
 		auto model_matrix = ModelMatrixMap::Get(entity_id);
 		auto transform = TransformMap::Get(entity_id);
 
@@ -203,7 +159,7 @@ namespace vv {
 			ModelMatrixMap::Set(entity_id, model_matrix);
 		}
 		else if (!transform) { // Nothing to make a model matrix with.
-			return;
+			return std::weak_ptr<ModelMatrix>();
 		}
 
 		auto camera_translation = transform->GetTranslation();
@@ -215,18 +171,42 @@ namespace vv {
 		if (this->views.find(entity_id) != this->views.end()) {
 			UpdateViewMatrix(entity_id);
 		}
+
+		return model_matrix;
 	}
 
 	void RenderSystem::RemoveModelMatrix(const GUID entity_id) {
 		ModelMatrixMap::Remove(entity_id);
+
+		// If there was an associated view matrix attempt to remove it as well.
+		RemoveViewMatrix(entity_id);
 	}
 
+	void RenderSystem::RemoveViewMatrix(const GUID entity_id) {
+		if (this->views.find(entity_id) != this->views.end()) {
+			this->views.erase(entity_id);
+			if (this->views.size() > 0) {
+				this->current_view = this->views.begin()->first;
+			}
+			else {
+				this->current_view = 0;
+			}
+		}
+	}
 	void RenderSystem::UpdateViewMatrix(const GUID entity_id) {
 		auto model_matrix = ModelMatrixMap::Get(entity_id);
-		// Check here in case this was called from somewhere besides UpdateModelMatrix()
+
 		if (!model_matrix) {
 			return;
 		}
 		this->views[entity_id] = glm::inverse(model_matrix->transform);
+	}
+
+	bool RenderSystem::ActivateView(const GUID entity_id) {
+		if (this->views.find(entity_id) != this->views.end()) {
+			this->current_view = entity_id;
+			return true;
+		}
+		return false;
 	}
 }

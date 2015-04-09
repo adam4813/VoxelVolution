@@ -6,52 +6,31 @@
 #include <atomic>
 #include "multiton.hpp"
 
-namespace vv {
-	// Container for callback type erasure.
-	struct Callback {
-	protected:
-		Callback() { }
-	};
-
-	// Used to create callbacks for command completion.
-	// Usage: 
-	//	auto callback = std::make_shared<Callback<arg_types>([] (arg_types arg1) { });
-	//	QueueCommand(COMMAND, entity_id, callback);
-	template <typename...args>
-	struct CallbackkHolder : Callback {
-		CallbackkHolder(std::function<void(args...)> callback) : callback(callback) { }
-		std::function<void(args...)> callback;
-	};
-
-	// Base class used for commands. T is the command id's type (e.g. enum, int, char).
-	template <typename T>
+namespace vv {	
+	template <class T>
 	struct Command {
-		Command(T c, GUID entity_id, std::shared_ptr<Callback> callback = nullptr) :
-			command(c), entity_id(entity_id), callback(callback) { }
-		T command;
-		GUID entity_id;
-		std::shared_ptr<Callback> callback;
+		Command(std::function<void(T*)> command) : command(command) { }
+		std::function<void(T*)> command;
 	};
 
-	// T is the command id's type (e.g. enum, int, char).
 	template <class T>
 	class CommandQueue {
 	public:
 		CommandQueue() : local_queue(new std::queue<std::shared_ptr<Command<T>>>()) { }
 		~CommandQueue() { }
 
-		// U is the derived Command type and V is the type of the data passed to that command's constructor.
-		// TODO: Possibly change V to be variadic.
-		template <typename U, typename V>
-		static void QueueCommand(const T c, const GUID entity_id,
-			std::shared_ptr<Callback> callback = nullptr, V data = nullptr) {
-			auto command = std::make_shared<U>(c, entity_id, callback, data);
-			(*global_queue).push(command);
+		void ProcessCommandQueue() {
+			this->local_queue = global_queue.exchange(this->local_queue);
+
+			while (!this->local_queue->empty()) {
+				auto command = this->local_queue->front();
+				this->local_queue->pop();
+
+				command->command(static_cast<T*>(this));
+			}
 		}
 
-		static void QueueCommand(const T c, const GUID entity_id,
-			std::shared_ptr<Callback> callback = nullptr) {
-			auto command = std::make_shared<Command<T>>(c, entity_id, callback);
+		static void QueueCommand(std::shared_ptr<Command<T>> command) {
 			(*global_queue).push(command);
 		}
 	protected:

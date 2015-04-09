@@ -3,8 +3,8 @@
 #include "polygonmeshdata.hpp"
 
 namespace vv {
-	std::atomic<std::queue<std::shared_ptr<Command<VOXEL_COMMAND>>>*> VoxelVolume::global_queue =
-		new std::queue<std::shared_ptr<Command<VOXEL_COMMAND>>>();
+	std::atomic<std::queue<std::shared_ptr<Command<VoxelVolume>>>*> VoxelVolume::global_queue =
+		new std::queue<std::shared_ptr<Command<VoxelVolume>>>();
 
 	VoxelVolume::VoxelVolume(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) :
 		entity_id(entity_id), mesh(mesh), submesh(submesh) { }
@@ -74,25 +74,6 @@ namespace vv {
 	void VoxelVolume::Update(double delta) {
 		ProcessCommandQueue();
 		UpdateMesh();
-	}
-
-	void VoxelVolume::ProcessCommandQueue() {
-		this->local_queue = global_queue.exchange(this->local_queue);
-
-		while (!local_queue->empty()) {
-			auto action = local_queue->front();
-			local_queue->pop();
-			auto voxel_action = std::static_pointer_cast<VoxelCommand>(action);
-
-			switch (action->command) {
-				case VOXEL_ADD:
-					AddVoxel(voxel_action->row, voxel_action->column, voxel_action->slice);
-					break;
-				case VOXEL_REMOVE:
-					RemoveVoxel(voxel_action->row, voxel_action->column, voxel_action->slice);
-					break;
-			}
-		}
 	}
 
 	void VoxelVolume::UpdateMesh() {

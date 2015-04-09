@@ -18,25 +18,8 @@ namespace vv {
 	struct VertexBuffer;
 	class Material;
 
-	enum RS_COMMAND {
-		VIEW_ADD,
-		VIEW_UPDATE,
-		VIEW_ACTIVATE,
-		VIEW_REMOVE,
-		MODEL_MATRIX_ADD,
-		MODEL_MATRIX_UPDATE,
-		MODEL_MATRIX_REMOVE,
-		VB_ADD,
-		VB_REMOVE,
-	};
-
-	template <typename T>
-	struct RenderCommand : Command < RS_COMMAND > {
-		RenderCommand(const RS_COMMAND rs_c, const GUID entity_id,
-			std::shared_ptr<Callback> callback = nullptr, T data = nullptr) :
-			Command(rs_c, entity_id, callback), data(data) { }
-		T data;
-	};
+	class RenderSystem;
+	typedef Command<RenderSystem> RenderCommand;
 
 	struct ModelMatrix {
 		glm::mat4 transform;
@@ -44,7 +27,7 @@ namespace vv {
 
 	typedef Multiton<GUID, std::shared_ptr<ModelMatrix>> ModelMatrixMap;
 
-	class RenderSystem : public CommandQueue < RS_COMMAND > {
+	class RenderSystem : public CommandQueue < RenderSystem > {
 	public:
 		RenderSystem();
 
@@ -53,22 +36,31 @@ namespace vv {
 		void Update(const double delta);
 
 		void AddVertexBuffer(const std::weak_ptr<Material> mat, const std::weak_ptr<VertexBuffer> buffer, const GUID entity_id);
-	protected:
-		void ProcessCommandQueue();
 
-		void UpdateModelMatrix(const GUID entity_id);
+		// Updates a model matrix, if one doesn't exist for the given entity_id it will be created.
+		// Returns a weak_ptr to the create model matrix.
+		std::weak_ptr<ModelMatrix> UpdateModelMatrix(const GUID entity_id);
 
+		// Remove a model matrix.
 		void RemoveModelMatrix(const GUID entity_id);
 
+		// Update a view matrix to be the inverse of its corresponding model matrix.
+		// If a model matrix doesn't exist, this fails silently.
 		void UpdateViewMatrix(const GUID entity_id);
 
+		// Checks if there is a view associated entity_id and sets it as the current view.
+		bool ActivateView(const GUID entity_id);
+
+		// Remove a view matrix.
+		void RemoveViewMatrix(const GUID entity_id);
+	protected:
 		//void CreateVertexBuffer(GUID entity_id, const std::vector<Vertex>& verts, const std::vector<GLuint>& indices);
 	private:
 		glm::mat4 projection;
 		std::map<GUID, glm::mat4> views;
 		GUID current_view;
 		unsigned int window_width, window_height;
-		std::map<std::weak_ptr<Material>, std::pair<std::weak_ptr<VertexBuffer>,
-			std::list<GUID>>, std::owner_less<std::weak_ptr<Material>>> buffers;
+		std::map < std::weak_ptr<Material>, std::pair < std::weak_ptr<VertexBuffer>,
+			std::list<GUID >> , std::owner_less<std::weak_ptr<Material>>> buffers;
 	};
 }

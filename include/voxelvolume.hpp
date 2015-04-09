@@ -19,38 +19,15 @@ namespace vv {
 		std::weak_ptr<Voxel> neighbors[6];
 	};
 
-	enum VOXEL_COMMAND { VOXEL_ADD, VOXEL_REMOVE };
-
-	struct VoxelCommand : Command < VOXEL_COMMAND > {
-		VoxelCommand(const VOXEL_COMMAND voxel_c, const GUID entity_id,
-			std::shared_ptr<Callback> callback = nullptr,
-			std::tuple<std::int16_t, std::int16_t, std::int16_t> position = std::make_tuple(0, 0, 0)) :
-			Command(voxel_c, entity_id, callback) {
-			this->row = std::get<0>(position);
-			this->column = std::get<1>(position);
-			this->slice = std::get<2>(position);
-		}
-		std::int16_t row, column, slice;
-	};
-
 	class VoxelVolume;
 	typedef Multiton<GUID, std::shared_ptr<VoxelVolume>> VoxelVoumeMap;
 
-	class VoxelVolume : public CommandQueue < VOXEL_COMMAND > {
+	typedef Command<VoxelVolume> VoxelCommand;
+
+	class VoxelVolume : public CommandQueue < VoxelVolume > {
 	public:
 		VoxelVolume(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh = 0);
 		~VoxelVolume();
-
-	protected:
-		// All values are relative to the front orientation and centered on the root voxel.
-		// Slice is depth (away from the screen is positive). Row is up/down. Column is left/right.
-		// Therefore adding a voxel to the front face is AddVoxel(0, 0, 1).
-		void AddVoxel(const std::int16_t row, const std::int16_t column, const std::int16_t slice);
-
-		// See AddVoxel().
-		void RemoveVoxel(const std::int16_t row, const std::int16_t column, const std::int16_t slice);
-
-		void ProcessCommandQueue();
 	public:
 		// Iterates over all the actions queued before the call to update.
 		void Update(double delta);
@@ -59,6 +36,14 @@ namespace vv {
 		void UpdateMesh();
 
 		std::weak_ptr<PolygonMeshData> GetMesh();
+
+		// All values are relative to the front orientation and centered on the root voxel.
+		// Slice is depth (away from the screen is positive). Row is up/down. Column is left/right.
+		// Therefore adding a voxel to the front face is AddVoxel(0, 0, 1).
+		void AddVoxel(const std::int16_t row, const std::int16_t column, const std::int16_t slice);
+
+		// See AddVoxel().
+		void RemoveVoxel(const std::int16_t row, const std::int16_t column, const std::int16_t slice);
 
 		// Creates a VoxelVolume for entity_id and uses a PolygonMeshData with name and into submesh.
 		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id,
