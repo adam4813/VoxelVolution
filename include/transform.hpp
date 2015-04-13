@@ -7,8 +7,6 @@
 #include "multiton.hpp"
 
 namespace vv {
-	enum TRANSFORM_COMMAND { TRANSFORM_ADDED, TRANSFORM_UPDATED, TRANSFORM_REMOVED };
-
 	class Transform;
 	typedef Multiton<GUID, std::shared_ptr<Transform>> TransformMap;
 

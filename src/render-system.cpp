@@ -17,8 +17,8 @@ namespace vv {
 
 	typedef Multiton<std::string, std::shared_ptr<Texture>> TextureMap;
 
-	std::atomic<std::queue<std::shared_ptr<Command<RenderSystem>>>*> RenderSystem::global_queue =
-		new std::queue<std::shared_ptr<Command<RenderSystem>>>();
+	std::atomic<std::queue<Command<RenderSystem>>*> RenderSystem::global_queue =
+		new std::queue<Command<RenderSystem>>();
 
 	RenderSystem::RenderSystem() : current_view(0) {
 		auto err = glGetError();

@@ -73,7 +73,7 @@ int main(int argc, void* argv) {
 	auto voxvol_transform = std::make_shared<vv::Transform>();
 	vv::TransformMap::Set(100, voxvol_transform);
 
-	auto add_voxel = std::make_shared<vv::VoxelCommand>(
+	vv::VoxelCommand add_voxel(
 		[] (vv::VoxelVolume* vox_vol) {
 		vox_vol->AddVoxel(0, 1, 1);
 		vox_vol->AddVoxel(0, -1, 1);

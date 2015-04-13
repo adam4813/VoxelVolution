@@ -3,8 +3,8 @@
 #include "polygonmeshdata.hpp"
 
 namespace vv {
-	std::atomic<std::queue<std::shared_ptr<Command<VoxelVolume>>>*> VoxelVolume::global_queue =
-		new std::queue<std::shared_ptr<Command<VoxelVolume>>>();
+	std::atomic<std::queue<Command<VoxelVolume>>*> VoxelVolume::global_queue =
+		new std::queue<Command<VoxelVolume>>();
 
 	VoxelVolume::VoxelVolume(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) :
 		entity_id(entity_id), mesh(mesh), submesh(submesh) { }
