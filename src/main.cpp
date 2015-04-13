@@ -1,5 +1,5 @@
 #include "os.hpp"
-#include "dispatcher.hpp"
+#include "event-system.hpp"
 #include "render-system.hpp"
 #include "vertexbuffer.hpp"
 #include "shader.hpp"
@@ -11,11 +11,11 @@
 #include "polygonmeshdata.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
-struct CameraMover : public vv::Subscriber < vv::KeyboardEvent > {
+struct CameraMover : public vv::Receiver < vv::KeyboardEvent > {
 	CameraMover(std::shared_ptr<vv::Camera> c) : cam(c) {
-		vv::Dispatcher<vv::KeyboardEvent>::GetInstance()->Subscribe(this);
+		vv::EventSystem<vv::KeyboardEvent>::Get()->Subscribe(this);
 	}
-	void Notify(const vv::KeyboardEvent* data) {
+	void On(const vv::KeyboardEvent* data) {
 		auto transform = vv::TransformMap::Get(1);
 		switch (data->action) {
 			case vv::KeyboardEvent::KEY_UP:

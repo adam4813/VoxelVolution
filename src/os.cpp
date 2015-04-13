@@ -1,7 +1,7 @@
 #include "os.hpp"
 
 #include <iostream>
-#include "dispatcher.hpp"
+#include "event-system.hpp"
 
 #ifdef __APPLE__
 // Needed so we can disable retina support for our window.
@@ -207,12 +207,12 @@ namespace vv {
 			key_event = {key, scancode, KeyboardEvent::KEY_UP, mods};
 		}
 
-		Dispatcher<KeyboardEvent>::GetInstance()->NotifySubscribers(&key_event);
+		EventSystem<KeyboardEvent>::Get()->Emit(&key_event);
 	}
 
 	void OS::DispatchCharacterEvent(const unsigned int uchar) {
 		KeyboardEvent key_event {(const int)uchar, 0, KeyboardEvent::KEY_CHAR, 0};
-		Dispatcher<KeyboardEvent>::GetInstance()->NotifySubscribers(&key_event);
+		EventSystem<KeyboardEvent>::Get()->Emit(&key_event);
 	}
 
 	void OS::DispatchMouseMoveEvent(const double x, const double y) {
@@ -224,7 +224,7 @@ namespace vv {
 			static_cast<int>(x),
 			static_cast<int>(y)
 		};
-		Dispatcher<MouseMoveEvent>::GetInstance()->NotifySubscribers(&mmov_event);
+		EventSystem<MouseMoveEvent>::Get()->Emit(&mmov_event);
 
 		// If we are in mouse lock we will snap the mouse to the middle of the screen.
 		if (this->mouse_lock) {
@@ -255,7 +255,7 @@ namespace vv {
 		else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
 			mbtn_event.button = MouseBtnEvent::MIDDLE;
 		}
-		Dispatcher<MouseBtnEvent>::GetInstance()->NotifySubscribers(&mbtn_event);
+		EventSystem<MouseBtnEvent>::Get()->Emit(&mbtn_event);
 	}
 
 	void OS::ToggleMouseLock() {
