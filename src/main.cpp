@@ -49,23 +49,27 @@ int main(int argc, void* argv) {
 		vox_vol->AddVoxel(1, -1, 1);
 	});
 	vv::VoxelVolume::QueueCommand(add_voxel);
-
 	voxvol_shared->Update(0.0);
-	auto mesh = voxvol_shared->GetMesh().lock();
-	if (mesh) {
-		auto vb = std::make_shared<vv::VertexBuffer>();
-		vv::VertexBufferMap::Set(100, vb);
-		vb->Buffer(*mesh->GetVertexBuffer(), *mesh->GetIndexBuffer());
 
-		rs.AddVertexBuffer(basic_fill, vb, 100);
-		rs.AddVertexBuffer(overlay, vb, 100);
+	vv::RenderCommand add_vb(
+		[voxvol_shared, basic_fill, overlay] (vv::RenderSystem* ren_sys) {
+		auto mesh = voxvol_shared->GetMesh().lock();
+		if (mesh) {
+			auto vb = std::make_shared<vv::VertexBuffer>();
+			vv::VertexBufferMap::Set(100, vb);
+			vb->Buffer(*mesh->GetVertexBuffer(), *mesh->GetIndexBuffer());
 
-		auto vb2 = std::make_shared<vv::VertexBuffer>();
-		vv::VertexBufferMap::Set(1, vb2);
-		vb2->Buffer(*mesh->GetVertexBuffer(), *mesh->GetIndexBuffer());
+			ren_sys->AddVertexBuffer(basic_fill, vb, 100);
+			ren_sys->AddVertexBuffer(overlay, vb, 100);
 
-		rs.AddVertexBuffer(basic_fill, vb2, 1);
-	}
+			auto vb2 = std::make_shared<vv::VertexBuffer>();
+			vv::VertexBufferMap::Set(1, vb2);
+			vb2->Buffer(*mesh->GetVertexBuffer(), *mesh->GetIndexBuffer());
+
+			ren_sys->AddVertexBuffer(basic_fill, vb2, 1);
+		}
+	});
+	vv::RenderSystem::QueueCommand(add_vb);
 
 
 	std::shared_ptr<vv::Camera> cam1 = std::make_shared<vv::Camera>(1);
