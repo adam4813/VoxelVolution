@@ -6,20 +6,9 @@
 #include <mutex>
 
 #include "multiton.hpp"
+#include "event-queue.hpp"
 
 namespace vv {
-	// Event receiver base class
-	template <typename T>
-	class Receiver {
-	public:
-		virtual void On(const GUID entity_id, const T* data) { }
-		virtual void On(const T* data) { }
-
-		virtual void On(const GUID entity_id, const T data) { }
-		virtual void On(const T data) { }
-	};
-
-	// Sends events to receiver's On(...) methods by calling Emit().
 	template <typename T>
 	class EventSystem final {
 	private:
@@ -49,127 +38,107 @@ namespace vv {
 		~EventSystem() { }
 
 		/**
-		 * \brief Subscribes to be notified of data change events.
+		 * \brief Subscribes to be notified of events
 		 *
 		 * \param const unsigned int entity_id ID of the entity to subscribe to.
-		 * \param const Receiver<T>* subscriber The subscriber to add.
+		 * \param const EventQueue<T>* subscriber The subscriber to add.
 		 * \return void
 		 */
-		void Subscribe(const GUID entity_id, Receiver<T>* subscriber) {
-			auto sube = this->receivers.find(entity_id);
-			if (sube == this->receivers.end()) {
+		void Subscribe(const GUID entity_id, EventQueue<T>* subscriber) {
+			auto subs = this->subscribers.find(entity_id);
+			if (subs == this->subscribers.end()) {
 				// no subscriptions for entity, add the entity and subscriber
-				this->receivers[entity_id].push_back(subscriber);
+				this->subscribers[entity_id].push_back(subscriber);
 				return;
 			}
 			else {
 				// check if subscriber already exists
-				for (auto sub : sube->second) {
+				for (auto sub : subs->second) {
 					if (sub == subscriber) {
 						return; // already subscribed
 					}
 				}
-				sube->second.push_back(subscriber);
+				subs->second.push_back(subscriber);
 			}
 		}
 
 		/**
-		 * \brief Subscribes to be notified of data change events for any entity ID.
+		 * \brief Subscribes to be notified of events for all entity IDs.
 		 *
 		 * \param const Receiver<T>* subscriber The subscriber to add.
 		 * \return void
 		 */
-		void Subscribe(Receiver<T>* subscriber) {
-			this->receivers[0].push_back(subscriber);
+		void Subscribe(EventQueue<T>* subscriber) {
+			this->subscribers[0].push_back(subscriber);
 		}
 
 		/**
-		 * \brief Unsubscribes to notification of data change events.
+		 * \brief Unsubscribes to notification of events.
 		 *
 		 * \param const unsigned int entity_id ID of the entity to unsubscribe from.
 		 * \param const Receiver<T>* subscriber The subscriber to remove.
 		 * \return void
 		 */
-		void Unsubscribe(const GUID entity_id, Receiver<T>* subscriber) {
-			if (this->receivers.find(entity_id) != this->receivers.end()) {
-				this->receivers[entity_id].remove(subscriber);
+		void Unsubscribe(const GUID entity_id, EventQueue<T>* subscriber) {
+			if (this->subscribers.find(entity_id) != this->subscribers.end()) {
+				this->subscribers[entity_id].remove(subscriber);
 			}
 		}
 
 		/**
-		 * \brief Unsubscribes to notification of data change events.
+		 * \brief Unsubscribes to notification of events.
 		 *
 		 * \param const Receiver<T>* subscriber The subscriber to remove.
 		 * \return void
 		 */
-		void Unsubscribe(Receiver<T>* subscriber) {
-			if (this->receivers.find(0) != this->receivers.end()) {
-				this->receivers[0].remove(subscriber);
+		void Unsubscribe(EventQueue<T>* subscriber) {
+			if (this->subscribers.find(0) != this->subscribers.end()) {
+				this->subscribers[0].remove(subscriber);
 			}
 		}
 
 		/**
-		 * \brief Called to notify all subscribers that the data has changed.
+		 * \brief Emits an event to subscribers for a given entity_id and to all
+		 * subscribers listening for events for any entity_id.
 		 *
-		 * \param const unsigned int entity_id ID of the entity to update.
-		 * \param const T* data The changed data.
+		 * \param const unsigned int entity_id ID of the entity the event happen to.
+		 * \param const T* data The event data.
 		 * \return void
 		 */
-		void Emit(const GUID entity_id, const T* data) {
-			if (this->receivers.find(entity_id) != this->receivers.end()) {
-				auto subscriber_list = this->receivers.at(entity_id);
-				for (Receiver<T>* subscriber : subscriber_list) {
+		void Emit(const GUID entity_id, std::shared_ptr<T> data) {
+			if (this->subscribers.find(entity_id) != this->subscribers.end()) {
+				auto subscriber_list = this->subscribers.at(entity_id);
+				for (EventQueue<T>* subscriber : subscriber_list) {
 					subscriber->On(entity_id, data);
 				}
 			}
 
-			if (this->receivers.find(0) != this->receivers.end()) {
-				auto subscriber_list = this->receivers.at(0);
-				for (Receiver<T>* subscriber : subscriber_list) {
-					subscriber->On(entity_id, data);
-				}
-			}
-		}
-		void Emit(const GUID entity_id, const T data) {
-			if (this->receivers.find(entity_id) != this->receivers.end()) {
-				auto subscriber_list = this->receivers.at(entity_id);
-				for (Receiver<T>* subscriber : subscriber_list) {
-					subscriber->On(entity_id, data);
-				}
-			}
-
-			if (this->receivers.find(0) != this->receivers.end()) {
-				auto subscriber_list = this->receivers.at(0);
-				for (Receiver<T>* subscriber : subscriber_list) {
+			if (this->subscribers.find(0) != this->subscribers.end()) {
+				auto subscriber_list = this->subscribers.at(0);
+				for (EventQueue<T>* subscriber : subscriber_list) {
 					subscriber->On(entity_id, data);
 				}
 			}
 		}
 
 		/**
-		 * \brief Called to notify all subscribers for entity ID 0 that the data has changed.
+		 * \brief Emits an event to all subscribers listening for events for any entity_id.
 		 *
 		 * \param const T* data The changed data.
 		 * \return void
 		 */
-		void Emit(const T* data) {
-			if (this->receivers.find(0) != this->receivers.end()) {
-				auto subscriber_list = this->receivers.at(0);
-				for (Receiver<T>* subscriber : subscriber_list) {
-					subscriber->On(data);
+		void Emit(std::shared_ptr<T> data) {
+			if (this->subscribers.find(0) != this->subscribers.end()) {
+				auto subscriber_list = this->subscribers.at(0);
+				for (EventQueue<T>* subscriber : subscriber_list) {
+					Event<T> e(0, data);
+					subscriber->QueueEvent(std::move(e));
 				}
 			}
 		}
-		void Emit(const T data) {
-			if (this->receivers.find(0) != this->receivers.end()) {
-				auto subscriber_list = this->receivers.at(0);
-				for (Receiver<T>* subscriber : subscriber_list) {
-					subscriber->On(data);
-				}
-			}
-		}
+
 	private:
-		std::map<GUID, std::list<Receiver<T>*>> receivers;
+		std::map<GUID, std::list<EventQueue<T>*>> subscribers;
 	};
 
 	template<typename T>

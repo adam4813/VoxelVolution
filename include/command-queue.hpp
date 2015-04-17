@@ -6,7 +6,7 @@
 #include <atomic>
 #include "multiton.hpp"
 
-namespace vv {	
+namespace vv {
 	template <class T>
 	struct Command {
 		Command(std::function<void(T*)>&& command) : command(std::move(command)) { }
@@ -14,6 +14,8 @@ namespace vv {
 		std::function<void(T*)> command;
 	};
 
+	// Thread friendly double queue for incoming commands. Call ProcessCommandQueue() to
+	// iterate over all queued commands when it is safe to modify state.
 	template <class T>
 	class CommandQueue {
 	public:
@@ -21,7 +23,7 @@ namespace vv {
 		~CommandQueue() { }
 
 		void ProcessCommandQueue() {
-			this->local_queue = global_queue.exchange(this->local_queue);
+			this->local_queue = global_command_queue.exchange(this->local_queue);
 
 			while (!this->local_queue->empty()) {
 				auto command = this->local_queue->front();
@@ -32,15 +34,18 @@ namespace vv {
 		}
 
 		static void QueueCommand(Command<T> command) {
-			(*global_queue).push(std::move(command));
+			(*global_command_queue).push(std::move(command));
 		}
 
 		static void QueueCommand(std::function<void(T*)>&& command) {
-			(*global_queue).push(std::move(command));
+			(*global_command_queue).push(std::move(command));
 		}
 	protected:
-		// Each derived class must define global_queue in its source file.
-		static std::atomic<std::queue<Command<T>>*> global_queue;
+		static std::atomic<std::queue<Command<T>>*> global_command_queue;
 		std::queue<Command<T>>* local_queue;
 	};
+
+	template <class T>
+	std::atomic<std::queue<Command<T>>*> CommandQueue<T>::global_command_queue =
+		new std::queue<Command<T>>();
 }

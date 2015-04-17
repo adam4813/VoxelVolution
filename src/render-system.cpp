@@ -17,9 +17,6 @@ namespace vv {
 
 	typedef Multiton<std::string, std::shared_ptr<Texture>> TextureMap;
 
-	std::atomic<std::queue<Command<RenderSystem>>*> RenderSystem::global_queue =
-		new std::queue<Command<RenderSystem>>();
-
 	RenderSystem::RenderSystem() : current_view(0) {
 		auto err = glGetError();
 		// If there is an error that means something went wrong when creating the context.
@@ -63,7 +60,9 @@ namespace vv {
 	}
 
 	void RenderSystem::Update(const double delta) {
+		EventQueue<TransformChangedEvent>::ProcessEventQueue();
 		ProcessCommandQueue();
+
 		static float red = 0.3f, blue = 0.3f, green = 0.3f;
 
 		glClearColor(red, green, blue, 1.0f);
@@ -149,7 +148,7 @@ namespace vv {
 		this->buffers[mat] = std::make_pair(buffer, std::move(entity_list));
 	}
 
-	std::weak_ptr<ModelMatrix> RenderSystem::UpdateModelMatrix(const GUID entity_id) {
+	std::weak_ptr<ModelMatrix> RenderSystem::AddModelMatrix(const GUID entity_id) {
 		auto model_matrix = ModelMatrixMap::Get(entity_id);
 		auto transform = TransformMap::Get(entity_id);
 
@@ -157,9 +156,6 @@ namespace vv {
 		if (!model_matrix && transform) {
 			model_matrix = std::make_shared<ModelMatrix>();
 			ModelMatrixMap::Set(entity_id, model_matrix);
-		}
-		else if (!transform) { // Nothing to make a model matrix with.
-			return std::weak_ptr<ModelMatrix>();
 		}
 
 		auto camera_translation = transform->GetTranslation();
@@ -208,5 +204,22 @@ namespace vv {
 			return true;
 		}
 		return false;
+	}
+
+	void RenderSystem::On(const GUID entity_id, std::shared_ptr<TransformChangedEvent> tce_event) {
+		auto model_matrix = ModelMatrixMap::Get(tce_event->entity_id);
+		if (model_matrix) {
+			if (tce_event->frame >= model_matrix->frame) {
+				auto camera_translation = tce_event->current.GetTranslation();
+				auto camera_orientation = tce_event->current.GetOrientation();
+				model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
+					glm::mat4_cast(camera_orientation);
+
+				// Check if there is a view associated with the entity_id and update it as well.
+				if (this->views.find(tce_event->entity_id) != this->views.end()) {
+					UpdateViewMatrix(tce_event->entity_id);
+				}
+			}
+		}
 	}
 }

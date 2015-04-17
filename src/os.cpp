@@ -196,35 +196,36 @@ namespace vv {
 	}
 
 	void OS::DispatchKeyboardEvent(const int key, const int scancode, const int action, const int mods) {
-		KeyboardEvent key_event;
-		if (action == GLFW_PRESS) {
-			key_event = {key, scancode, KeyboardEvent::KEY_DOWN, mods};
-		}
-		else if (action == GLFW_REPEAT) {
-			key_event = {key, scancode, KeyboardEvent::KEY_REPEAT, mods};
+		std::shared_ptr<KeyboardEvent> key_event = std::make_shared<KeyboardEvent>(
+			KeyboardEvent {key, scancode, KeyboardEvent::KEY_DOWN, mods});
+		// Default is KEY_DOWN, check if it is REPEAT or UP instead.
+		if (action == GLFW_REPEAT) {
+			key_event->action = KeyboardEvent::KEY_REPEAT;
 		}
 		else if (action == GLFW_RELEASE) {
-			key_event = {key, scancode, KeyboardEvent::KEY_UP, mods};
+			key_event->action = KeyboardEvent::KEY_UP;
 		}
 
-		EventSystem<KeyboardEvent>::Get()->Emit(&key_event);
+		EventSystem<KeyboardEvent>::Get()->Emit(key_event);
 	}
 
 	void OS::DispatchCharacterEvent(const unsigned int uchar) {
-		KeyboardEvent key_event {(const int)uchar, 0, KeyboardEvent::KEY_CHAR, 0};
-		EventSystem<KeyboardEvent>::Get()->Emit(&key_event);
+		std::shared_ptr<KeyboardEvent> key_event = std::make_shared<KeyboardEvent>(
+			KeyboardEvent {(const int)uchar, 0, KeyboardEvent::KEY_CHAR, 0});
+		EventSystem<KeyboardEvent>::Get()->Emit(key_event);
 	}
 
 	void OS::DispatchMouseMoveEvent(const double x, const double y) {
-		MouseMoveEvent mmov_event = {
+		std::shared_ptr<MouseMoveEvent> mmov_event = std::make_shared<MouseMoveEvent>(
+			MouseMoveEvent{
 			static_cast<double>(x) / this->client_width,
 			static_cast<double>(y) / this->client_height,
 			static_cast<int>(this->old_mouse_x),
 			static_cast<int>(this->old_mouse_y),
 			static_cast<int>(x),
 			static_cast<int>(y)
-		};
-		EventSystem<MouseMoveEvent>::Get()->Emit(&mmov_event);
+		});
+		EventSystem<MouseMoveEvent>::Get()->Emit(mmov_event);
 
 		// If we are in mouse lock we will snap the mouse to the middle of the screen.
 		if (this->mouse_lock) {
@@ -239,23 +240,23 @@ namespace vv {
 	}
 
 	void OS::DispatchMouseButtonEvent(const int button, const int action, const int mods) {
-		MouseBtnEvent mbtn_event;
+		std::shared_ptr<MouseBtnEvent> mbtn_event = std::make_shared<MouseBtnEvent>();
 		if (action == GLFW_PRESS) {
-			mbtn_event.action = MouseBtnEvent::DOWN;
+			mbtn_event->action = MouseBtnEvent::DOWN;
 		}
 		else {
-			mbtn_event.action = MouseBtnEvent::UP;
+			mbtn_event->action = MouseBtnEvent::UP;
 		}
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
-			mbtn_event.button = MouseBtnEvent::LEFT;
+			mbtn_event->button = MouseBtnEvent::LEFT;
 		}
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			mbtn_event.button = MouseBtnEvent::RIGHT;
+			mbtn_event->button = MouseBtnEvent::RIGHT;
 		}
 		else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-			mbtn_event.button = MouseBtnEvent::MIDDLE;
+			mbtn_event->button = MouseBtnEvent::MIDDLE;
 		}
-		EventSystem<MouseBtnEvent>::Get()->Emit(&mbtn_event);
+		EventSystem<MouseBtnEvent>::Get()->Emit(mbtn_event);
 	}
 
 	void OS::ToggleMouseLock() {

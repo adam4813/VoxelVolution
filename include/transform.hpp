@@ -127,5 +127,11 @@ namespace vv {
 		glm::quat orientation;
 		GUID entity_id;
 	};
-
+	
+	struct TransformChangedEvent {
+		std::int64_t frame = 0;
+		GUID entity_id;
+		Transform old;
+		Transform current;
+	};
 }

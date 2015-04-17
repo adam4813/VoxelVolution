@@ -1,5 +1,6 @@
 #include "os.hpp"
 #include "event-system.hpp"
+#include "event-queue.hpp"
 #include "render-system.hpp"
 #include "vertexbuffer.hpp"
 #include "shader.hpp"
@@ -11,11 +12,12 @@
 #include "polygonmeshdata.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
-struct CameraMover : public vv::Receiver < vv::KeyboardEvent > {
-	CameraMover(std::shared_ptr<vv::Camera> c) : cam(c) {
-		vv::EventSystem<vv::KeyboardEvent>::Get()->Subscribe(this);
+struct CameraMover : public vv::EventQueue < vv::KeyboardEvent > {
+	CameraMover(std::shared_ptr<vv::Camera> c) : cam(c) { }
+	void Update(double delta) {
+		ProcessEventQueue();
 	}
-	void On(const vv::KeyboardEvent* data) {
+	void On(std::shared_ptr<vv::KeyboardEvent> data) {
 		auto transform = vv::TransformMap::Get(1);
 		switch (data->action) {
 			case vv::KeyboardEvent::KEY_UP:
@@ -36,7 +38,6 @@ struct CameraMover : public vv::Receiver < vv::KeyboardEvent > {
 						cam->MakeActive();
 						break;
 				}
-				cam->UpdateViewMatrix();
 				break;
 			default:
 				break;
@@ -74,7 +75,7 @@ int main(int argc, void* argv) {
 	vv::TransformMap::Set(100, voxvol_transform);
 
 	vv::VoxelCommand add_voxel(
-		[] (vv::VoxelVolume* vox_vol) {
+		[ ] (vv::VoxelVolume* vox_vol) {
 		vox_vol->AddVoxel(0, 1, 1);
 		vox_vol->AddVoxel(0, -1, 1);
 		vox_vol->AddVoxel(0, -1, 0);
@@ -97,21 +98,18 @@ int main(int argc, void* argv) {
 		vv::VertexBufferMap::Set(1, vb2);
 		vb2->Buffer(*mesh->GetVertexBuffer(), *mesh->GetIndexBuffer());
 
-	auto camera_transform = std::make_shared<vv::Transform>();
-	vv::TransformMap::Set(1, camera_transform);
-	vv::RenderSystem::QueueCommand(vv::VIEW_ACTIVATE, 1);
-	vv::RenderSystem::QueueCommand(vv::MODEL_MATRIX_ADD, 1);
 		rs.AddVertexBuffer(basic_fill, vb2, 1);
 	}
 
-	auto camera_transform2 = std::make_shared<vv::Transform>();
-	vv::TransformMap::Set(2, camera_transform2);
-	vv::RenderSystem::QueueCommand(vv::MODEL_MATRIX_ADD, 2);
 
-	CameraMover cam_mover;
+	std::shared_ptr<vv::Camera> cam1 = std::make_shared<vv::Camera>(1);
+	vv::Camera cam2(2);
+
+	CameraMover cam_mover(cam1);
 
 	while (!os.Closing()) {
 		rs.Update(os.GetDeltaTime());
+		cam_mover.Update(0.0);
 		os.OSMessageLoop();
 		os.SwapBuffers();
 	}
