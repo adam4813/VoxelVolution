@@ -12,40 +12,6 @@
 #include "polygonmeshdata.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
-struct CameraMover : public vv::EventQueue < vv::KeyboardEvent > {
-	CameraMover(std::shared_ptr<vv::Camera> c) : cam(c) { }
-	void Update(double delta) {
-		ProcessEventQueue();
-	}
-	void On(std::shared_ptr<vv::KeyboardEvent> data) {
-		auto transform = vv::TransformMap::Get(1);
-		switch (data->action) {
-			case vv::KeyboardEvent::KEY_UP:
-				switch (data->key) {
-					case GLFW_KEY_A:
-						transform->OrientedRotate(glm::vec3(0.0, glm::radians(10.0f), 0.0));
-						break;
-					case GLFW_KEY_D:
-						transform->OrientedRotate(glm::vec3(0.0, glm::radians(-10.0f), 0.0));
-						break;
-					case GLFW_KEY_W:
-						transform->OrientedTranslate(glm::vec3(0.0, 0.0, -1.0));
-						break;
-					case GLFW_KEY_S:
-						transform->OrientedTranslate(glm::vec3(0.0, 0.0, 1.0));
-						break;
-					case GLFW_KEY_SPACE:
-						cam->MakeActive();
-						break;
-				}
-				break;
-			default:
-				break;
-		}
-	}
-
-	std::shared_ptr<vv::Camera> cam;
-};
 
 int main(int argc, void* argv) {
 	vv::OS os;
@@ -105,7 +71,7 @@ int main(int argc, void* argv) {
 	std::shared_ptr<vv::Camera> cam1 = std::make_shared<vv::Camera>(1);
 	vv::Camera cam2(2);
 
-	CameraMover cam_mover(cam1);
+	vv::CameraMover cam_mover(cam1);
 
 	while (!os.Closing()) {
 		rs.Update(os.GetDeltaTime());
