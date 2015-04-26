@@ -33,7 +33,7 @@ namespace vv {
 			}
 		}
 
-		static void QueueCommand(Command<T> command) {
+		static void QueueCommand(Command<T>&& command) {
 			(*global_command_queue).push(std::move(command));
 		}
 

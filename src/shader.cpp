@@ -1,5 +1,7 @@
 #include "shader.hpp"
 
+#include <iterator>
+
 namespace vv {
 	Shader::Shader() : program(0) { }
 

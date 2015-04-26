@@ -15,6 +15,9 @@ namespace vv {
 		GUID entity_id;
 		std::shared_ptr<T> data;
 	};
+	
+	template <typename T>
+	class EventSystem;
 
 	// Thread friendly double queue for incoming events. Call EventQueue<T>::ProcessEventQueue()
 	// to iterate over all queued events when it is safe to modify state. You must

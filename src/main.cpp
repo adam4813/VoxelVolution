@@ -48,7 +48,7 @@ int main(int argc, void* argv) {
 		vox_vol->AddVoxel(0, -1, -1);
 		vox_vol->AddVoxel(1, -1, 1);
 	});
-	vv::VoxelVolume::QueueCommand(add_voxel);
+	vv::VoxelVolume::QueueCommand(std::move(add_voxel));
 	voxvol_shared->Update(0.0);
 
 	vv::RenderCommand add_vb(
@@ -69,7 +69,7 @@ int main(int argc, void* argv) {
 			ren_sys->AddVertexBuffer(basic_fill, vb2, 1);
 		}
 	});
-	vv::RenderSystem::QueueCommand(add_vb);
+	vv::RenderSystem::QueueCommand(std::move(add_vb));
 
 
 	std::shared_ptr<vv::Camera> cam1 = std::make_shared<vv::Camera>(1);
