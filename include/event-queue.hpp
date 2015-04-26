@@ -40,7 +40,7 @@ namespace vv {
 			this->read_event_queue = write_event_queue.exchange(this->read_event_queue);
 
 			while (!this->read_event_queue->empty()) {
-				auto e = this->read_event_queue->front();
+				Event<T> e = std::move(this->read_event_queue->front());
 				this->read_event_queue->pop();
 
 				static_cast<EventQueue<T>*>(this)->On(e.data);

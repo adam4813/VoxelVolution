@@ -19,14 +19,18 @@ namespace vv {
 	template <class T>
 	class CommandQueue {
 	public:
-		CommandQueue() : local_queue(new std::queue<Command<T>>()) { }
+		CommandQueue() : local_queue(new std::queue<Command<T>>()) {
+			if (!global_command_queue.load()) {
+				global_command_queue.store(new std::queue<Command<T>>());
+			}
+		}
 		~CommandQueue() { }
 
 		void ProcessCommandQueue() {
 			this->local_queue = global_command_queue.exchange(this->local_queue);
 
 			while (!this->local_queue->empty()) {
-				auto command = this->local_queue->front();
+				Command<T> command = std::move(this->local_queue->front());
 				this->local_queue->pop();
 
 				command.command(static_cast<T*>(this));
@@ -46,6 +50,5 @@ namespace vv {
 	};
 
 	template <class T>
-	std::atomic<std::queue<Command<T>>*> CommandQueue<T>::global_command_queue =
-		new std::queue<Command<T>>();
+	std::atomic<std::queue<Command<T>>*> CommandQueue<T>::global_command_queue;
 }
