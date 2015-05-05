@@ -11,11 +11,26 @@ SET(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 # find all source files in the src directory
 FILE(GLOB_RECURSE VV_SRC "src/*.cpp")
 
+# find all source files in the src directory
+FILE(GLOB_RECURSE VV_SERVER_SRC "server/*.cpp")
+
+# find all source files in the src directory
+FILE(GLOB_RECURSE VV_CLIENT_SRC "client/*.cpp")
+
 # find all the files in the includes directory
 FILE(GLOB_RECURSE VV_INCLUDES "include/*.h" "include/*.hpp")
 
+# find all source files in the src directory
+FILE(GLOB_RECURSE VV_SERVER_INCLUDES "server/*.h" "server/*.hpp")
+
+# find all source files in the src directory
+FILE(GLOB_RECURSE VV_CLIENT_INCLUDES "client/*.h" "client/*.hpp")
+
 #Check if we can build with the current tool chain
 INCLUDE(SetCompilerFlags)
+
+add_definitions(-DASIO_STANDALONE)
+add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 SET(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${CMAKE_SOURCE_DIR}/include/)
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/include/")
@@ -31,6 +46,7 @@ ENDIF (WIN32 AND NOT MINGW)
 FIND_PACKAGE(GLM REQUIRED)
 FIND_PACKAGE(OpenGL REQUIRED)
 FIND_PACKAGE(GLFW3 REQUIRED)
+FIND_PACKAGE(ASIO REQUIRED)
 
 # Give these some dummy values and if the platform is LINUX or OSX they will be set accordingly.
 SET(X11_LIBRARIES "")
@@ -79,7 +95,17 @@ set(VV_ALL_LIBS
 
 ADD_EXECUTABLE("VoxelVolution"
 	${VV_SRC}
+	${VV_CLIENT_SRC}
 	${VV_INCLUDES}
+	${VV_CLIENT_INCLUDES}
 )
-
 TARGET_LINK_LIBRARIES("VoxelVolution" ${VV_ALL_LIBS})
+
+ADD_EXECUTABLE("VoxelVolution Server"
+	${VV_SRC}
+	${VV_SERVER_SRC}
+	${VV_INCLUDES}
+	${VV_SERVER_INCLUDES}
+)
+TARGET_LINK_LIBRARIES("VoxelVolution Server" ${VV_ALL_LIBS})
+
