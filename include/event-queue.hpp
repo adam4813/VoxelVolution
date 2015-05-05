@@ -4,7 +4,6 @@
 #include <memory>
 #include <atomic>
 #include "multiton.hpp"
-#include "event-system.hpp"
 
 namespace vv {
 	// Container to hold event data. This is stored in the queue rather than raw event data.
