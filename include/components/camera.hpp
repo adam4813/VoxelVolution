@@ -28,12 +28,12 @@ namespace vv {
 		virtual void Update(double delta) { }
 	};
 	struct CameraMover : public Controller, public EventQueue < KeyboardEvent > {
-		CameraMover(std::shared_ptr<Camera> c) : cam(c) { }
+		CameraMover(std::weak_ptr<Camera> c) : cam(c) { }
 
 		void On(std::shared_ptr<KeyboardEvent> data);
 
 		void Update(double delta);
 
-		std::shared_ptr<Camera> cam;
+		std::weak_ptr<Camera> cam;
 	};
 }

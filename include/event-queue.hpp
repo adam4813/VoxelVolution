@@ -14,7 +14,7 @@ namespace vv {
 		GUID entity_id;
 		std::shared_ptr<T> data;
 	};
-	
+
 	template <typename T>
 	class EventSystem;
 

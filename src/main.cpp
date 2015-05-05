@@ -4,10 +4,10 @@
 #include "render-system.hpp"
 #include "vertexbuffer.hpp"
 #include "shader.hpp"
-#include "multiton.hpp"
 #include "voxelvolume.hpp"
 #include "transform.hpp"
 #include "material.hpp"
+#include "entity.hpp"
 #include "components/camera.hpp"
 #include "polygonmeshdata.hpp"
 #include <glm/gtc/matrix_transform.hpp>
@@ -37,8 +37,9 @@ int main(int argc, void* argv) {
 	auto overlay = vv::Material::Create("material_overlay", s_overlay);
 	overlay.lock()->SetFillMode(GL_LINE);
 
-	auto voxvol_transform = std::make_shared<vv::Transform>();
-	vv::TransformMap::Set(100, voxvol_transform);
+	vv::Entity voxel1(100);
+	voxel1.Add<vv::Position>();
+	voxel1.Add<vv::Orientation>();
 
 	vv::VoxelCommand add_voxel(
 		[ ] (vv::VoxelVolume* vox_vol) {
@@ -71,11 +72,16 @@ int main(int argc, void* argv) {
 	});
 	vv::RenderSystem::QueueCommand(std::move(add_vb));
 
+	vv::Entity camera(1);
+	camera.Add<vv::Position>();
+	camera.Add<vv::Orientation>();
+	camera.Add<vv::Camera>(1);
+	vv::Entity camera2(2);
+	camera2.Add<vv::Position>();
+	camera2.Add<vv::Orientation>();
+	camera2.Add<vv::Camera>(2);
 
-	std::shared_ptr<vv::Camera> cam1 = std::make_shared<vv::Camera>(1);
-	vv::Camera cam2(2);
-
-	vv::CameraMover cam_mover(cam1);
+	vv::CameraMover cam_mover(camera.Get<vv::Camera>());
 
 	while (!os.Closing()) {
 		rs.Update(os.GetDeltaTime());

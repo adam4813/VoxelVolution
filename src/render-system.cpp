@@ -8,6 +8,9 @@
 #include "vertexbuffer.hpp"
 #include "transform.hpp"
 #include "material.hpp"
+#include "entity.hpp"
+
+#include "component-update-system.hpp"
 
 namespace vv {
 	class Texture {
@@ -59,9 +62,33 @@ namespace vv {
 			);
 	}
 
+	std::int64_t frame_id = 0;
+
 	void RenderSystem::Update(const double delta) {
-		EventQueue<TransformChangedEvent>::ProcessEventQueue();
 		ProcessCommandQueue();
+		ComponentUpdateSystem<Position>::UpdateTo(frame_id);
+		ComponentUpdateSystem<Orientation>::UpdateTo(frame_id++);
+		const std::map<GUID, frame_id_t>& transform_list =
+			ComponentUpdateSystem<Position>::GetUpdatedOnList();
+
+		for (auto t : transform_list) {
+			auto entity_id = t.first;
+			auto frame = t.second;
+			auto model_matrix = ModelMatrixMap::Get(entity_id);
+			std::shared_ptr<Position> position = Entity(entity_id).Get<Position>().lock();
+			std::shared_ptr<Orientation> orientation = Entity(entity_id).Get<Orientation>().lock();
+			if (model_matrix) {
+				auto camera_translation = position->value;
+				auto camera_orientation = orientation->value;
+				model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
+					glm::mat4_cast(camera_orientation);
+
+				// Check if there is a view associated with the entity_id and update it as well.
+				if (this->views.find(t.first) != this->views.end()) {
+					UpdateViewMatrix(t.first);
+				}
+			}
+		}
 
 		static float red = 0.3f, blue = 0.3f, green = 0.3f;
 
@@ -150,16 +177,17 @@ namespace vv {
 
 	std::weak_ptr<ModelMatrix> RenderSystem::AddModelMatrix(const GUID entity_id) {
 		auto model_matrix = ModelMatrixMap::Get(entity_id);
-		auto transform = TransformMap::Get(entity_id);
+		std::shared_ptr<Position> position = Entity(entity_id).Get<Position>().lock();
+		std::shared_ptr<Orientation> orientation = Entity(entity_id).Get<Orientation>().lock();
 
 		// If the model matrix doesn't exist, but a transform does make the model matrix.
-		if (!model_matrix && transform) {
+		if (!model_matrix) {
 			model_matrix = std::make_shared<ModelMatrix>();
 			ModelMatrixMap::Set(entity_id, model_matrix);
 		}
 
-		auto camera_translation = transform->GetTranslation();
-		auto camera_orientation = transform->GetOrientation();
+		auto camera_translation = position->value;
+		auto camera_orientation = orientation->value;
 		model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
 			glm::mat4_cast(camera_orientation);
 
@@ -204,22 +232,5 @@ namespace vv {
 			return true;
 		}
 		return false;
-	}
-
-	void RenderSystem::On(const GUID entity_id, std::shared_ptr<TransformChangedEvent> tce_event) {
-		auto model_matrix = ModelMatrixMap::Get(tce_event->entity_id);
-		if (model_matrix) {
-			if (tce_event->frame >= model_matrix->frame) {
-				auto camera_translation = tce_event->current.GetTranslation();
-				auto camera_orientation = tce_event->current.GetOrientation();
-				model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
-					glm::mat4_cast(camera_orientation);
-
-				// Check if there is a view associated with the entity_id and update it as well.
-				if (this->views.find(tce_event->entity_id) != this->views.end()) {
-					UpdateViewMatrix(tce_event->entity_id);
-				}
-			}
-		}
 	}
 }

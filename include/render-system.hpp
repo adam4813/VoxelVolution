@@ -18,23 +18,19 @@
 namespace vv {
 	struct VertexBuffer;
 	class Material;
-	class Transform;
 
 	class RenderSystem;
 	typedef Command<RenderSystem> RenderCommand;
 
-	struct TransformChangedEvent;
 	struct KeyboardEvent;
 
 	struct ModelMatrix {
-		std::int64_t frame = 0; // The frame number transform was computed from.
 		glm::mat4 transform;
 	};
 
 	typedef Multiton<GUID, std::shared_ptr<ModelMatrix>> ModelMatrixMap;
 
-	class RenderSystem : public CommandQueue < RenderSystem >,
-		public EventQueue < TransformChangedEvent >, public EventQueue < KeyboardEvent > {
+	class RenderSystem : public CommandQueue < RenderSystem >, public EventQueue < KeyboardEvent > {
 	public:
 		RenderSystem();
 
@@ -60,16 +56,8 @@ namespace vv {
 
 		// Remove a view matrix.
 		void RemoveViewMatrix(const GUID entity_id);
-
-		// Called by EventSystem when a TransformChangedEvent occurs. The event added to
-		// tce_queue during ProcessEventQueue, and then the event is handled during
-		// the update phase.
-		void On(const GUID entity_id, std::shared_ptr<TransformChangedEvent> tce_event);
 	protected:
 		//void CreateVertexBuffer(GUID entity_id, const std::vector<Vertex>& verts, const std::vector<GLuint>& indices);
-
-		// Update the specified model matrix using the provided transform.
-		void UpdateModelMatrix(std::shared_ptr<ModelMatrix> model_matrix, std::shared_ptr<Transform> transform);
 	private:
 		glm::mat4 projection;
 		std::map<GUID, glm::mat4> views;
