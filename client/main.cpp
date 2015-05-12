@@ -12,6 +12,17 @@
 #include "polygonmeshdata.hpp"
 #include "component-update-system.hpp"
 #include <glm/gtc/matrix_transform.hpp>
+#include <map>
+
+#include <asio.hpp>
+#include <array>
+#include "message.hpp"
+#include "position-message.hpp"
+#include "client.hpp"
+#include <thread>
+
+vv::eid player_id;
+std::string username;
 
 std::list<std::function<void(vv::frame_id_t)>> vv::ComponentUpdateSystemList::update_funcs;
 
@@ -92,8 +103,39 @@ int main(int argc, void* argv) {
 	camera2.Add<vv::Camera>(2);
 
 	vv::CameraMover cam_mover(1);
-	
-    std::int64_t frame_id = 1;
+
+	asio::io_service io_service;
+
+	tcp::resolver resolver(io_service);
+	tcp::resolver::iterator endpoint_iterator = resolver.resolve({"localhost", "12345"});
+
+	chat_client c(io_service, endpoint_iterator);
+	std::thread t([&io_service] () { io_service.run(); });
+	auto chat_listen = [&c] () {
+		std::cout << "username:";
+		std::cin >> username;
+		std::cout << "id:";
+		std::cin >> player_id;
+
+		std::cin.clear();
+		std::cin.ignore(10000, '\n');
+
+		char line[chat_message::max_body_length + 1];
+		while (std::cin.getline(line, chat_message::max_body_length + 1)) {
+			chat_message msg;
+			std::string str;
+			str += username;
+			str += ": ";
+			str += line;
+			msg.body_length(str.size());
+			std::memcpy(msg.body(), str.c_str(), msg.body_length());
+			msg.encode_header();
+			c.write(msg);
+		}
+	};
+	std::thread t2(chat_listen);
+
+	std::int64_t frame_id = 1;
 
 	while (!os.Closing()) {
 		vv::ComponentUpdateSystemList::UpdateAll(frame_id);
@@ -102,8 +144,27 @@ int main(int argc, void* argv) {
 		rs.Update(os.GetDeltaTime());
 		os.OSMessageLoop();
 		os.SwapBuffers();
+
+		vv::position_message pm;
+		for (auto itr = vv::Multiton<vv::eid, std::shared_ptr<vv::Position>>::Begin(); itr != vv::Multiton<vv::eid, std::shared_ptr<vv::Position>>::End(); ++itr) {
+			auto entity_id = itr->first;
+			pm.FrameID(frame_id);
+			auto position = itr->second->value;
+			std::stringstream ss;
+			ss << position.x << "," << position.y << "," << position.z;
+			/*glm::vec3 test;
+			char c;
+			ss >> test.x >> c >> test.y >> c >> test.z;*/
+			std::memcpy(pm.body(), ss.str().c_str(), ss.str().size());
+			pm.body_length(ss.str().size());
+			pm.encode_header();
+			c.write(pm);
+		}
 		frame_id++;
 	}
+	c.close();
+	t.join();
+	t2.join();
 
 	return 0;
 }
