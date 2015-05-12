@@ -25,11 +25,16 @@ namespace vv {
 
 	struct KeyboardEvent;
 
-	struct ModelMatrix {
-		glm::mat4 transform;
+	struct Renderable {
+		glm::mat4 model_matrix;
 	};
 
-	typedef Multiton<GUID, std::shared_ptr<ModelMatrix>> ModelMatrixMap;
+	struct View {
+		glm::mat4 view_matrix;
+		bool active = false;
+	};
+
+	typedef Multiton<eid, std::shared_ptr<Renderable>> RenderableMap;
 
 	class RenderSystem : public CommandQueue < RenderSystem >, public EventQueue < KeyboardEvent > {
 	public:
@@ -39,30 +44,15 @@ namespace vv {
 
 		void Update(const double delta);
 
-		void AddVertexBuffer(const std::weak_ptr<Material> mat, const std::weak_ptr<VertexBuffer> buffer, const GUID entity_id);
-
-		// Updates a model matrix, if one doesn't exist for the given entity_id it will be created.
-		// Returns a weak_ptr to the create model matrix.
-		std::weak_ptr<ModelMatrix> AddModelMatrix(const GUID entity_id);
-
-		// Remove a model matrix.
-		void RemoveModelMatrix(const GUID entity_id);
-
-		// Update a view matrix to be the inverse of its corresponding model matrix.
-		// If a model matrix doesn't exist, this fails silently.
-		void UpdateViewMatrix(const GUID entity_id);
+		void AddVertexBuffer(const std::weak_ptr<Material> mat, const std::weak_ptr<VertexBuffer> buffer, const eid entity_id);
 
 		// Checks if there is a view associated entity_id and sets it as the current view.
-		bool ActivateView(const GUID entity_id);
-
-		// Remove a view matrix.
-		void RemoveViewMatrix(const GUID entity_id);
+		bool ActivateView(const eid entity_id);
 	protected:
-		//void CreateVertexBuffer(GUID entity_id, const std::vector<Vertex>& verts, const std::vector<GLuint>& indices);
+		//void CreateVertexBuffer(eid entity_id, const std::vector<Vertex>& verts, const std::vector<GLuint>& indices);
 	private:
 		glm::mat4 projection;
-		std::map<GUID, glm::mat4> views;
-		GUID current_view;
+		std::weak_ptr<View> current_view;
 		unsigned int window_width, window_height;
 		std::map < std::weak_ptr<Material>, std::pair < std::weak_ptr<VertexBuffer>,
 			std::list<eid >> , std::owner_less<std::weak_ptr<Material>>> buffers;

@@ -1,24 +1,18 @@
 #pragma once
 
 #include <memory>
-#include <glm/mat4x4.hpp>
-#include "multiton.hpp"
+#include "entity.hpp"
 #include "event-system.hpp"
 
 namespace vv {
-	struct ModelMatrix;
-
 	class Camera {
 	public:
-		Camera(GUID entity_id);
+		Camera(eid entity_id);
 		~Camera();
 
 		bool MakeActive();
-
-		glm::mat4 GetViewMatrix();
 	private:
-		std::weak_ptr<ModelMatrix> model_matrix;
-		GUID entity_id;
+		Entity e;
 	};
 
 	struct KeyboardEvent;
@@ -27,13 +21,16 @@ namespace vv {
 	struct Controller {
 		virtual void Update(double delta) { }
 	};
+	// TODO: Remove this class as it is only for testing and should really be implemented in script.
 	struct CameraMover : public Controller, public EventQueue < KeyboardEvent > {
-		CameraMover(std::weak_ptr<Camera> c) : cam(c) { }
+		CameraMover(eid entity_id) : e(entity_id) { }
 
 		void On(std::shared_ptr<KeyboardEvent> data);
 
 		void Update(double delta);
 
 		std::weak_ptr<Camera> cam;
+
+		Entity e;
 	};
 }

@@ -48,6 +48,7 @@ int main(int argc, void* argv) {
 	vv::Entity voxel1(100);
 	voxel1.Add<vv::Position>();
 	voxel1.Add<vv::Orientation>();
+	voxel1.Add<vv::Renderable>();
 
 	vv::VoxelCommand add_voxel(
 		[ ] (vv::VoxelVolume* vox_vol) {
@@ -84,12 +85,15 @@ int main(int argc, void* argv) {
 	camera.Add<vv::Position>();
 	camera.Add<vv::Orientation>();
 	camera.Add<vv::Camera>(1);
+	camera.Add<vv::Renderable>();
 	vv::Entity camera2(2);
 	camera2.Add<vv::Position>();
 	camera2.Add<vv::Orientation>();
 	camera2.Add<vv::Camera>(2);
 
-	vv::CameraMover cam_mover(camera.Get<vv::Camera>());
+	vv::CameraMover cam_mover(1);
+	
+    std::int64_t frame_id = 1;
 
 	while (!os.Closing()) {
 		vv::ComponentUpdateSystemList::UpdateAll(frame_id);
@@ -98,6 +102,7 @@ int main(int argc, void* argv) {
 		rs.Update(os.GetDeltaTime());
 		os.OSMessageLoop();
 		os.SwapBuffers();
+		frame_id++;
 	}
 
 	return 0;

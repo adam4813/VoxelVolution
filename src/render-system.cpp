@@ -10,8 +10,6 @@
 #include "material.hpp"
 #include "entity.hpp"
 
-#include "component-update-system.hpp"
-
 namespace vv {
 	class Texture {
 	public:
@@ -20,7 +18,7 @@ namespace vv {
 
 	typedef Multiton<std::string, std::shared_ptr<Texture>> TextureMap;
 
-	RenderSystem::RenderSystem() : current_view(0) {
+	RenderSystem::RenderSystem() {
 		auto err = glGetError();
 		// If there is an error that means something went wrong when creating the context.
 		if (err) {
@@ -67,6 +65,28 @@ namespace vv {
 
 		// Loop through each renderbale and update its model matrix.
 		for (auto itr = RenderableMap::Begin(); itr != RenderableMap::End(); ++itr) {
+			auto entity_id = itr->first;
+			glm::vec3 position;
+			glm::quat orientation;
+			Entity e(entity_id);
+			if (e.Has<Position>()) {
+				position = e.Get<Position>().lock()->value;
+			}
+			if (e.Has<Orientation>()) {
+				orientation = e.Get<Orientation>().lock()->value;
+			}
+			auto camera_translation = position;
+			auto camera_orientation = orientation;
+
+			itr->second->model_matrix = glm::translate(glm::mat4(1.0), camera_translation) *
+				glm::mat4_cast(camera_orientation);
+
+			// Check if there is a view associated with the entity_id and update it as well.
+			if (e.Has<View>()) {
+				auto view = e.Get<View>().lock();
+				view->view_matrix = glm::inverse(itr->second->model_matrix);
+				if (view->active) {
+					this->current_view = view;
 				}
 			}
 		}
@@ -77,8 +97,11 @@ namespace vv {
 		glViewport(0, 0, this->window_width, this->window_height);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		auto camera_matrix = this->views[this->current_view];
-
+		glm::mat4 camera_matrix(1.0);
+		auto view = this->current_view.lock();
+		if (view) {
+			camera_matrix = view->view_matrix;
+		}
 		for (auto material_group : this->buffers) {
 			auto material = material_group.first.lock();
 			if (!material) {
@@ -110,17 +133,13 @@ namespace vv {
 				shader->ActivateTextureUnit(i, name);
 				}*/
 
-				auto transform = ModelMatrixMap::Get(entity_id);
-				if (transform) {
-					glUniformMatrix4fv(model_index, 1, GL_FALSE,
-						&transform->transform[0][0]);
-				}
-				else {
-					static glm::mat4 identity(1.0);
-					glUniformMatrix4fv(model_index, 1, GL_FALSE,
-						&identity[0][0]);
 			for (eid entity_id : material_group.second.second) {
+				glm::mat4 model_matrix = glm::mat4(1.0);
+				auto mm = RenderableMap::Get(entity_id);
+				if (mm != nullptr) {
+					model_matrix = mm->model_matrix;
 				}
+				glUniformMatrix4fv(model_index, 1, GL_FALSE, &model_matrix[0][0]);
 				/*auto renanim = ren_group.animations.find(entity_id);
 				if (renanim != ren_group.animations.end()) {
 				glUniform1i(u_animate_loc, 1);
@@ -151,65 +170,14 @@ namespace vv {
 				}
 			}
 		}
-		std::list<GUID> entity_list;
+		std::list<eid> entity_list;
 		entity_list.push_back(entity_id);
 		this->buffers[mat] = std::make_pair(buffer, std::move(entity_list));
 	}
 
-	std::weak_ptr<ModelMatrix> RenderSystem::AddModelMatrix(const GUID entity_id) {
-		auto model_matrix = ModelMatrixMap::Get(entity_id);
-		std::shared_ptr<Position> position = Entity(entity_id).Get<Position>().lock();
-		std::shared_ptr<Orientation> orientation = Entity(entity_id).Get<Orientation>().lock();
-
-		// If the model matrix doesn't exist, but a transform does make the model matrix.
-		if (!model_matrix) {
-			model_matrix = std::make_shared<ModelMatrix>();
-			ModelMatrixMap::Set(entity_id, model_matrix);
-		}
-
-		auto camera_translation = position->value;
-		auto camera_orientation = orientation->value;
-		model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
-			glm::mat4_cast(camera_orientation);
-
-		// Check if there is a view associated with the entity_id and update it as well.
-		if (this->views.find(entity_id) != this->views.end()) {
-			UpdateViewMatrix(entity_id);
-		}
-
-		return model_matrix;
-	}
-
-	void RenderSystem::RemoveModelMatrix(const GUID entity_id) {
-		ModelMatrixMap::Remove(entity_id);
-
-		// If there was an associated view matrix attempt to remove it as well.
-		RemoveViewMatrix(entity_id);
-	}
-
-	void RenderSystem::RemoveViewMatrix(const GUID entity_id) {
-		if (this->views.find(entity_id) != this->views.end()) {
-			this->views.erase(entity_id);
-			if (this->views.size() > 0) {
-				this->current_view = this->views.begin()->first;
-			}
-			else {
-				this->current_view = 0;
-			}
-		}
-	}
-	void RenderSystem::UpdateViewMatrix(const GUID entity_id) {
-		auto model_matrix = ModelMatrixMap::Get(entity_id);
-
-		if (!model_matrix) {
-			return;
-		}
-		this->views[entity_id] = glm::inverse(model_matrix->transform);
-	}
-
-	bool RenderSystem::ActivateView(const GUID entity_id) {
-		if (this->views.find(entity_id) != this->views.end()) {
-			this->current_view = entity_id;
+	bool RenderSystem::ActivateView(const eid entity_id) {
+		if (Entity(entity_id).Has<View>()) {
+			this->current_view = Entity(entity_id).Get<View>();;
 			return true;
 		}
 		return false;

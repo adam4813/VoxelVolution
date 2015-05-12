@@ -17,16 +17,22 @@ namespace vv {
 		void Add(U&&... args) {
 			if (!Multiton<eid, std::shared_ptr<T>>::Get(this->id)) {
 				auto comp = std::make_shared<T>(std::forward<U>(args)...);
-				Set(comp);
+
+				ComponentUpdateSystem<T>::SubmitUpdate(this->id, comp);
 			}
 		}
 
 		template <typename T>
+		void Remove() {
+			ComponentUpdateSystem<T>::SubmitRemoval(this->id);
+		}
+
 		template <typename T>
 		bool Has() {
 			return Multiton<eid, std::shared_ptr<T>>::Get(this->id) != nullptr;
 		}
 
+		template <typename T>
 		std::weak_ptr<T> Get() {
 			return Multiton<eid, std::shared_ptr<T>>::Get(this->id);
 		}
@@ -35,25 +41,17 @@ namespace vv {
 		std::tuple<std::weak_ptr<T>...> GetList() {
 			return std::make_tuple(Multiton<eid, std::shared_ptr<T>>::Get(this->id)...);
 		}
-	protected:
+
 		template <typename T>
-		void Set(std::shared_ptr<T> val) {
-			Multiton<eid, std::shared_ptr<T>>::Set(this->id, val);
+		void Update(std::shared_ptr<T> val) {
+			ComponentUpdateSystem<T>::SubmitUpdate(this->id, val);
 		}
 
 		template <typename T>
-		void Set(T val) {
+		void Update(T val) {
 			auto comp = std::make_shared<T>(val);
-			Set(comp);
+			Update(comp);
 		}
-
-		template <typename T>
-		void Remove() {
-			Multiton<eid, std::shared_ptr<T>>::Remove(this->id);
-		}
-
-		template <typename T>
-		friend class ComponentUpdateSystem;
 	private:
 		eid id;
 	};

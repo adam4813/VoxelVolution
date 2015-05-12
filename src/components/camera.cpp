@@ -4,8 +4,6 @@
 #include "os.hpp"
 #include "render-system.hpp"
 #include "transform.hpp"
-#include "entity.hpp"
-#include "component-update-system.hpp"
 
 namespace vv {
 	void CameraMover::Update(double delta) {
@@ -15,17 +13,18 @@ namespace vv {
 	void CameraMover::On(std::shared_ptr<vv::KeyboardEvent> data) {
 		auto camera = this->cam.lock();
 		if (!camera) {
+			this->cam = e.Get<Camera>();
 			return;
 		}
-		auto transforms = Entity(1).GetList<Position, Orientation>();
+		auto transforms = e.GetList<Position, Orientation>();
 		if (!std::get<0>(transforms).lock()) {
 			return;
 		}
-		std::shared_ptr<Position> position = std::make_shared<Position>(*std::get<0>(transforms).lock().get());
+		auto position = std::make_shared<Position>(*std::get<0>(transforms).lock().get());
 		if (!std::get<1>(transforms).lock()) {
 			return;
 		}
-		std::shared_ptr<Orientation> orientation = std::make_shared<Orientation>(*std::get<1>(transforms).lock().get());
+		auto orientation = std::make_shared<Orientation>(*std::get<1>(transforms).lock().get());
 
 		switch (data->action) {
 			case vv::KeyboardEvent::KEY_UP:
@@ -50,61 +49,29 @@ namespace vv {
 			default:
 				break;
 		}
-		ComponentUpdateSystem<Position>::SubmitUpdate(1, position);
-		ComponentUpdateSystem<Orientation>::SubmitUpdate(1, orientation);
+		this->e.Update<Position>(position);
+		this->e.Update<Orientation>(orientation);
 	}
-	Camera::Camera(GUID entity_id) : entity_id(entity_id) {
-		// Queue a command to add the view matrix and model matrix
-		// associated with this entity_id.
-		RenderSystem::QueueCommand([this] (RenderSystem* ren_sys) {
-			this->model_matrix = ren_sys->AddModelMatrix(this->entity_id);
-			ren_sys->UpdateViewMatrix(this->entity_id);
-		});
-		auto old_position = Entity(this->entity_id).Get<Position>();
-		std::shared_ptr<Position> position;
-		if (old_position.lock()) {
-			position = std::make_shared<Position>(*old_position.lock().get());
-		}
-		else {
-			position = std::make_shared<Position>();
-		}
-		auto old_orientation = Entity(this->entity_id).Get<Orientation>();
-		std::shared_ptr<Orientation> orientation;
-		if (old_orientation.lock()) {
-			orientation = std::make_shared<Orientation>(*old_orientation.lock().get());
-		}
-		else {
-			orientation = std::make_shared<Orientation>();
-		}
-		ComponentUpdateSystem<Position>::SubmitUpdate(1, position);
-		ComponentUpdateSystem<Orientation>::SubmitUpdate(1, orientation);
+	Camera::Camera(eid entity_id) : e(entity_id) {
+		e.Add<View>();
 	}
 
 	Camera::~Camera() {
-		RenderSystem::QueueCommand([this] (RenderSystem* ren_sys) {
-			ren_sys->RemoveModelMatrix(this->entity_id);
-		});
-		ComponentUpdateSystem<Position>::SubmitRemoveal(this->entity_id);
-		ComponentUpdateSystem<Orientation>::SubmitRemoveal(this->entity_id);
+		this->e.Remove<Position>();
+		this->e.Remove<Orientation>();
 	}
 
 	bool Camera::MakeActive() {
-		auto model = this->model_matrix.lock();
-		if (model) {
-			RenderSystem::QueueCommand([this] (RenderSystem* ren_sys) {
-				ren_sys->ActivateView(this->entity_id);
-			});
+		if (this->e.Has<View>()) {
+			auto view = this->e.Get<View>().lock();
+			if (!view->active) {
+				auto new_view = std::make_shared<View>();
+				new_view->active = true;
+				new_view->view_matrix = view->view_matrix;
+				this->e.Update<View>(new_view);
+			}
 			return true;
 		}
-
 		return false;
-	}
-
-	glm::mat4 Camera::GetViewMatrix() {
-		auto model = this->model_matrix.lock();
-		if (model) {
-			return glm::inverse(model->transform);
-		}
-		return glm::mat4(1.0);
 	}
 }
