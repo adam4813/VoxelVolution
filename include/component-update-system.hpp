@@ -4,6 +4,8 @@
 #include <list>
 #include <memory>
 #include <cstdint>
+#include <functional>
+#include "multiton.hpp"
 #include "types.hpp"
 
 namespace vv {
@@ -13,6 +15,26 @@ namespace vv {
 		std::map<eid, std::shared_ptr<T>> updates; // Components to be updated
 		std::list<eid> removals; // Components to be removed
 	};
+
+	// Used to iterate over all ComponentUpdateSystem::UpdateTo methods.
+	class ComponentUpdateSystemList {
+	public:
+		ComponentUpdateSystemList() { }
+
+		// Update all ComponentUpdateSystem to frame_id by calling their update functions
+		// that was registered in ComponentUpdateSystem::Initialize().
+		static void UpdateAll(frame_id_t frame_id) {
+			for (auto func : update_funcs) {
+				func(frame_id);
+			}
+		}
+
+		// Register an update function
+		static void RegisterUpdateFunction(std::function<void(frame_id_t)>&& update_func) {
+			update_funcs.push_back(update_func);
+		}
+	private:
+		static std::list<std::function<void(frame_id_t)>> update_funcs;
 	};
 
 	// Schedules updates and removals of component's and applies them to
@@ -23,8 +45,11 @@ namespace vv {
 		ComponentUpdateSystem() { }
 		~ComponentUpdateSystem() { }
 
-		static const std::map<GUID, frame_id_t>& GetUpdatedOnList() {
-			return frame_id_updated_on;
+		static void Initialize() {
+			auto update_func = [ ] (frame_id_t frame_id) {
+				ComponentUpdateSystem<T>::UpdateTo(frame_id);
+			};
+			ComponentUpdateSystemList::RegisterUpdateFunction(update_func);
 		}
 
 		// Applies all future_update_lists up to and including frame_id
@@ -92,11 +117,6 @@ namespace vv {
 			}
 		}
 	protected:
-
-		// Maps entity ID to the frame_id this component was updated in.
-		// TODO Make this a shared_ptr to allow creating a new list and leaving the old
-		// for current readers to use unmodified.
-		static std::map<GUID, frame_id_t> frame_id_updated_on;
 		static std::map<frame_id_t, std::shared_ptr<ComponentUpdateList<T>>> future_update_lists;
 
 		// The last confirmed frame_id
@@ -107,8 +127,5 @@ namespace vv {
 	std::map<frame_id_t, std::shared_ptr<ComponentUpdateList<T>>> ComponentUpdateSystem<T>::future_update_lists;
 
 	template <typename T>
-
-	template <typename T>
-	std::map<GUID, frame_id_t> ComponentUpdateSystem<T>::frame_id_updated_on;
 	frame_id_t ComponentUpdateSystem<T>::base_frame_id = 0;
 }

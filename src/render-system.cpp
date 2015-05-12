@@ -62,30 +62,11 @@ namespace vv {
 			);
 	}
 
-	std::int64_t frame_id = 0;
-
 	void RenderSystem::Update(const double delta) {
 		ProcessCommandQueue();
-		ComponentUpdateSystem<Position>::UpdateTo(frame_id);
-		ComponentUpdateSystem<Orientation>::UpdateTo(frame_id++);
-		const std::map<GUID, frame_id_t>& transform_list =
-			ComponentUpdateSystem<Position>::GetUpdatedOnList();
 
-		for (auto t : transform_list) {
-			auto entity_id = t.first;
-			auto frame = t.second;
-			auto model_matrix = ModelMatrixMap::Get(entity_id);
-			std::shared_ptr<Position> position = Entity(entity_id).Get<Position>().lock();
-			std::shared_ptr<Orientation> orientation = Entity(entity_id).Get<Orientation>().lock();
-			if (model_matrix) {
-				auto camera_translation = position->value;
-				auto camera_orientation = orientation->value;
-				model_matrix->transform = glm::translate(glm::mat4(1.0), camera_translation) *
-					glm::mat4_cast(camera_orientation);
-
-				// Check if there is a view associated with the entity_id and update it as well.
-				if (this->views.find(t.first) != this->views.end()) {
-					UpdateViewMatrix(t.first);
+		// Loop through each renderbale and update its model matrix.
+		for (auto itr = RenderableMap::Begin(); itr != RenderableMap::End(); ++itr) {
 				}
 			}
 		}
@@ -129,7 +110,6 @@ namespace vv {
 				shader->ActivateTextureUnit(i, name);
 				}*/
 
-			for (GUID entity_id : material_group.second.second) {
 				auto transform = ModelMatrixMap::Get(entity_id);
 				if (transform) {
 					glUniformMatrix4fv(model_index, 1, GL_FALSE,
@@ -139,6 +119,7 @@ namespace vv {
 					static glm::mat4 identity(1.0);
 					glUniformMatrix4fv(model_index, 1, GL_FALSE,
 						&identity[0][0]);
+			for (eid entity_id : material_group.second.second) {
 				}
 				/*auto renanim = ren_group.animations.find(entity_id);
 				if (renanim != ren_group.animations.end()) {
@@ -157,7 +138,7 @@ namespace vv {
 	}
 
 	void RenderSystem::AddVertexBuffer(const std::weak_ptr<Material> mat,
-		const std::weak_ptr<VertexBuffer> buffer, const GUID entity_id) {
+		const std::weak_ptr<VertexBuffer> buffer, const eid entity_id) {
 		auto mat1 = mat.lock();
 		for (auto material_group : this->buffers) {
 			auto mat2 = material_group.first.lock();

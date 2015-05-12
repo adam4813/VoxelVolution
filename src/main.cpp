@@ -10,8 +10,10 @@
 #include "entity.hpp"
 #include "components/camera.hpp"
 #include "polygonmeshdata.hpp"
+#include "component-update-system.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
+std::list<std::function<void(vv::frame_id_t)>> vv::ComponentUpdateSystemList::update_funcs;
 
 int main(int argc, void* argv) {
 	vv::OS os;
@@ -36,6 +38,12 @@ int main(int argc, void* argv) {
 	auto s_overlay = vv::Shader::CreateFromFile("shader_overlay", shader_files);
 	auto overlay = vv::Material::Create("material_overlay", s_overlay);
 	overlay.lock()->SetFillMode(GL_LINE);
+
+	vv::ComponentUpdateSystem<vv::Position>::Initialize();
+	vv::ComponentUpdateSystem<vv::Orientation>::Initialize();
+	vv::ComponentUpdateSystem<vv::Camera>::Initialize();
+	vv::ComponentUpdateSystem<vv::Renderable>::Initialize();
+	vv::ComponentUpdateSystem<vv::View>::Initialize();
 
 	vv::Entity voxel1(100);
 	voxel1.Add<vv::Position>();
@@ -84,8 +92,10 @@ int main(int argc, void* argv) {
 	vv::CameraMover cam_mover(camera.Get<vv::Camera>());
 
 	while (!os.Closing()) {
-		rs.Update(os.GetDeltaTime());
+		vv::ComponentUpdateSystemList::UpdateAll(frame_id);
+
 		cam_mover.Update(0.0);
+		rs.Update(os.GetDeltaTime());
 		os.OSMessageLoop();
 		os.SwapBuffers();
 	}
