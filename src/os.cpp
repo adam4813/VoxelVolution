@@ -217,7 +217,7 @@ namespace vv {
 
 	void OS::DispatchMouseMoveEvent(const double x, const double y) {
 		std::shared_ptr<MouseMoveEvent> mmov_event = std::make_shared<MouseMoveEvent>(
-			MouseMoveEvent{
+			MouseMoveEvent {
 			static_cast<double>(x) / this->client_width,
 			static_cast<double>(y) / this->client_height,
 			static_cast<int>(this->old_mouse_x),

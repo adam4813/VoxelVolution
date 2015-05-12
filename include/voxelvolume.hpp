@@ -7,6 +7,7 @@
 #include <queue>
 #include <cstdint>
 
+#include "multiton.hpp"
 #include "command-queue.hpp"
 
 namespace vv {
@@ -20,13 +21,13 @@ namespace vv {
 	};
 
 	class VoxelVolume;
-	typedef Multiton<GUID, std::shared_ptr<VoxelVolume>> VoxelVoumeMap;
+	typedef Multiton<eid, std::shared_ptr<VoxelVolume>> VoxelVoumeMap;
 
 	typedef Command<VoxelVolume> VoxelCommand;
 
 	class VoxelVolume : public CommandQueue < VoxelVolume > {
 	public:
-		VoxelVolume(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh = 0);
+		VoxelVolume(const eid entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh = 0);
 		~VoxelVolume();
 	public:
 		// Iterates over all the actions queued before the call to update.
@@ -46,15 +47,15 @@ namespace vv {
 		void RemoveVoxel(const std::int16_t row, const std::int16_t column, const std::int16_t slice);
 
 		// Creates a VoxelVolume for entity_id and uses a PolygonMeshData with name and into submesh.
-		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id,
+		static std::weak_ptr<VoxelVolume> Create(const eid entity_id,
 			const std::string name, const size_t submesh = 0);
 		// Creates a VoxelVolume for entity_id and uses PolygonMeshData and into submesh.
-		static std::weak_ptr<VoxelVolume> Create(const GUID entity_id,
+		static std::weak_ptr<VoxelVolume> Create(const eid entity_id,
 			std::weak_ptr<PolygonMeshData> mesh = std::weak_ptr<PolygonMeshData>(), const size_t submesh = 0);
 	private:
 		std::unordered_map<std::int64_t, std::shared_ptr<Voxel>> voxels;
 		std::weak_ptr<PolygonMeshData> mesh;
 		size_t submesh;
-		GUID entity_id;
+		eid entity_id;
 	};
 }

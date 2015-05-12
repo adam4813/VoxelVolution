@@ -12,6 +12,7 @@
 #endif
 
 #include "multiton.hpp"
+#include "types.hpp"
 #include "event-system.hpp"
 #include "command-queue.hpp"
 
@@ -64,6 +65,6 @@ namespace vv {
 		GUID current_view;
 		unsigned int window_width, window_height;
 		std::map < std::weak_ptr<Material>, std::pair < std::weak_ptr<VertexBuffer>,
-			std::list<GUID >> , std::owner_less<std::weak_ptr<Material>>> buffers;
+			std::list<eid >> , std::owner_less<std::weak_ptr<Material>>> buffers;
 	};
 }

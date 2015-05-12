@@ -22,7 +22,7 @@ namespace vv {
 
 		// Add a single index to the vector, for the specified submesh.
 		void AddIndex(unsigned int i, size_t submesh = 0);
-		
+
 		// Used to batch copy a vector of indices, for the specified submesh.
 		void SetIndicies(std::vector<unsigned int>& indicies, size_t submesh = 0);
 

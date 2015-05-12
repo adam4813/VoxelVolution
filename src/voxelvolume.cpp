@@ -3,7 +3,7 @@
 #include "polygonmeshdata.hpp"
 
 namespace vv {
-	VoxelVolume::VoxelVolume(const GUID entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) :
+	VoxelVolume::VoxelVolume(const eid entity_id, std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) :
 		entity_id(entity_id), mesh(mesh), submesh(submesh) { }
 
 	VoxelVolume::~VoxelVolume() { }
@@ -141,7 +141,7 @@ namespace vv {
 		return this->mesh;
 	}
 
-	std::weak_ptr<VoxelVolume> VoxelVolume::Create(GUID entity_id,
+	std::weak_ptr<VoxelVolume> VoxelVolume::Create(eid entity_id,
 		const std::string name, const size_t submesh) {
 		std::weak_ptr<PolygonMeshData> mesh = PolygonMeshMap::Get(name);
 		if (!mesh.lock()) {
@@ -152,7 +152,7 @@ namespace vv {
 		return voxvol;
 	}
 
-	std::weak_ptr<VoxelVolume> VoxelVolume::Create(GUID entity_id,
+	std::weak_ptr<VoxelVolume> VoxelVolume::Create(eid entity_id,
 		std::weak_ptr<PolygonMeshData> mesh, const size_t submesh) {
 		auto voxvol = std::make_shared<VoxelVolume>(entity_id, mesh, submesh);
 		VoxelVoumeMap::Set(entity_id, voxvol);

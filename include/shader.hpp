@@ -28,7 +28,7 @@ namespace vv {
 			FRAGMENT = GL_FRAGMENT_SHADER,
 			GEOMETRY = GL_GEOMETRY_SHADER,
 		};
-		
+
 		Shader();
 
 		~Shader();

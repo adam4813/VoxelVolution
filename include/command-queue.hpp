@@ -4,7 +4,6 @@
 #include <memory>
 #include <functional>
 #include <atomic>
-#include "multiton.hpp"
 
 namespace vv {
 	template <class T>

@@ -1,10 +1,9 @@
 #pragma once
 
 #include <map>
+#include "types.hpp"
 
 namespace vv {
-	typedef long long GUID;
-
 	/* Based class to be used for instance or state storage.
 	*
 	* This is useful in place of static instances or globals. Derived classes
@@ -60,6 +59,11 @@ namespace vv {
 				return instances.at(id);
 			}
 			return default_value;
+		}
+
+
+		static bool Has() {
+			return instances.find(id) != instances.end();
 		}
 
 		/**

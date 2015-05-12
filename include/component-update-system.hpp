@@ -4,17 +4,19 @@
 #include <list>
 #include <memory>
 #include <cstdint>
+#include "types.hpp"
 
 namespace vv {
-	typedef std::int64_t frame_id_t;
-
 	template <typename T>
 	struct ComponentUpdateList {
 		frame_id_t frame = 0; // The frame id the changes are in.
-		std::map<GUID, std::shared_ptr<T>> updates; // Components to be updated
-		std::list<GUID> removals; // Components to be removed
+		std::map<eid, std::shared_ptr<T>> updates; // Components to be updated
+		std::list<eid> removals; // Components to be removed
+	};
 	};
 
+	// Schedules updates and removals of component's and applies them to
+	// the central component store when UpdateTo is called.
 	template <typename T>
 	class ComponentUpdateSystem {
 	public:
@@ -25,87 +27,88 @@ namespace vv {
 			return frame_id_updated_on;
 		}
 
-		// Applies all future_updates up to and including frame_id
+		// Applies all future_update_lists up to and including frame_id
 		static void UpdateTo(frame_id_t frame_id) {
-			for (frame_id_t i = confirmed_frame_id; i <= frame_id; ++i) {
-				if (future_updates.find(i) != future_updates.end()) {
-					auto current_frame_list = future_updates.at(i);
+			for (frame_id_t i = base_frame_id; i <= frame_id; ++i) {
+				if (future_update_lists.find(i) != future_update_lists.end()) {
+					auto current_frame_list = future_update_lists.at(i);
 
 					auto updates = current_frame_list->updates;
 					for (auto pair : updates) {
-						Entity(pair.first).Set<T>(pair.second);
-						frame_id_updated_on[pair.first] = frame_id;
+						Multiton<eid, std::shared_ptr<T>>::Set(pair.first, pair.second);
 					}
 
 					auto removals = current_frame_list->removals;
 					for (auto entity_id : removals) {
-						Entity(entity_id).Remove<T>();
+						Multiton<eid, std::shared_ptr<T>>::Remove(entity_id);
 					}
-					future_updates.erase(i);
+					future_update_lists.erase(i);
 				}
 			}
-			confirmed_frame_id = frame_id;
+			base_frame_id = frame_id;
 		}
 
-		static void SubmitUpdate(GUID entity_id, std::shared_ptr<T> value, frame_id_t frame_id = 0) {
-			if (frame_id > confirmed_frame_id) {
-				if (future_updates.find(frame_id) == future_updates.end()) {
-					future_updates[frame_id] = std::make_shared<ComponentUpdateList<T>>();
-					future_updates[frame_id]->frame = frame_id;
+		// Schedule a component update for frame_id or the most future if frame_id is 0.
+		static void SubmitUpdate(eid entity_id, std::shared_ptr<T> value, frame_id_t frame_id = 0) {
+			if (frame_id > base_frame_id) {
+				if (future_update_lists.find(frame_id) == future_update_lists.end()) {
+					future_update_lists[frame_id] = std::make_shared<ComponentUpdateList<T>>();
+					future_update_lists[frame_id]->frame = frame_id;
 				}
-				future_updates[frame_id]->updates[entity_id] = value;
+				future_update_lists[frame_id]->updates[entity_id] = value;
 			}
 			else if (frame_id == 0) {
-				if (future_updates.upper_bound(confirmed_frame_id) == future_updates.end()) {
-					frame_id = confirmed_frame_id + 1;
-					future_updates[frame_id] = std::make_shared<ComponentUpdateList<T>>();
-					future_updates[frame_id]->frame = frame_id;
+				if (future_update_lists.upper_bound(base_frame_id) == future_update_lists.end()) {
+					frame_id = base_frame_id + 1;
+					future_update_lists[frame_id] = std::make_shared<ComponentUpdateList<T>>();
+					future_update_lists[frame_id]->frame = frame_id;
 				}
 				else {
-					frame_id = (*future_updates.upper_bound(confirmed_frame_id)).first;
+					frame_id = (*future_update_lists.upper_bound(base_frame_id)).first;
 				}
-				(*future_updates.upper_bound(confirmed_frame_id)).second->updates[entity_id] = value;
+				(*future_update_lists.upper_bound(base_frame_id)).second->updates[entity_id] = value;
 			}
 		}
 
-		static void SubmitRemoveal(GUID entity_id, frame_id_t frame_id = 0) {
-			if (frame_id > confirmed_frame_id) {
-				if (future_updates.find(frame_id) == future_updates.end()) {
-					future_updates[frame_id] = std::make_shared<ComponentUpdateList<T>>();
-					future_updates[frame_id]->frame = frame_id;
+		// Schedule a component removal for frame_id or the most future if frame_id is 0.
+		static void SubmitRemoval(eid entity_id, frame_id_t frame_id = 0) {
+			if (frame_id > base_frame_id) {
+				if (future_update_lists.find(frame_id) == future_update_lists.end()) {
+					future_update_lists[frame_id] = std::make_shared<ComponentUpdateList<T>>();
+					future_update_lists[frame_id]->frame = frame_id;
 				}
-				future_updates[frame_id]->removals.push_back(entity_id);
+				future_update_lists[frame_id]->removals.push_back(entity_id);
 			}
 			else if (frame_id == 0) {
-				if (future_updates.upper_bound(confirmed_frame_id) == future_updates.end()) {
-					frame_id = confirmed_frame_id + 1;
-					future_updates[frame_id] = std::make_shared<ComponentUpdateList<T>>();
-					future_updates[frame_id]->frame = frame_id;
+				if (future_update_lists.upper_bound(base_frame_id) == future_update_lists.end()) {
+					frame_id = base_frame_id + 1;
+					future_update_lists[frame_id] = std::make_shared<ComponentUpdateList<T>>();
+					future_update_lists[frame_id]->frame = frame_id;
 				}
 				else {
-					frame_id = (*future_updates.upper_bound(confirmed_frame_id)).first;
+					frame_id = (*future_update_lists.upper_bound(base_frame_id)).first;
 				}
-				future_updates[frame_id]->removals.push_back(entity_id);
+				future_update_lists[frame_id]->removals.push_back(entity_id);
 			}
 		}
 	protected:
-		static std::map<frame_id_t, std::shared_ptr<ComponentUpdateList<T>>> future_updates;
 
 		// Maps entity ID to the frame_id this component was updated in.
 		// TODO Make this a shared_ptr to allow creating a new list and leaving the old
 		// for current readers to use unmodified.
 		static std::map<GUID, frame_id_t> frame_id_updated_on;
+		static std::map<frame_id_t, std::shared_ptr<ComponentUpdateList<T>>> future_update_lists;
 
 		// The last confirmed frame_id
-		static frame_id_t confirmed_frame_id;
+		static frame_id_t base_frame_id;
 	};
 
 	template <typename T>
-	std::map<frame_id_t, std::shared_ptr<ComponentUpdateList<T>>> ComponentUpdateSystem<T>::future_updates;
+	std::map<frame_id_t, std::shared_ptr<ComponentUpdateList<T>>> ComponentUpdateSystem<T>::future_update_lists;
 
 	template <typename T>
-	frame_id_t ComponentUpdateSystem<T>::confirmed_frame_id = 0;
 
 	template <typename T>
 	std::map<GUID, frame_id_t> ComponentUpdateSystem<T>::frame_id_updated_on;
+	frame_id_t ComponentUpdateSystem<T>::base_frame_id = 0;
 }

@@ -14,7 +14,7 @@
 
 namespace vv {
 	struct VertexBuffer;
-	typedef Multiton<GUID, std::shared_ptr<VertexBuffer>> VertexBufferMap;
+	typedef Multiton<eid, std::shared_ptr<VertexBuffer>> VertexBufferMap;
 
 	// TODO: Move to Mesh class file
 	struct Vertex {

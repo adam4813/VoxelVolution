@@ -5,7 +5,7 @@
 #include <memory>
 #include <mutex>
 
-#include "multiton.hpp"
+#include "types.hpp"
 #include "event-queue.hpp"
 
 namespace vv {
@@ -44,7 +44,7 @@ namespace vv {
 		 * \param const EventQueue<T>* subscriber The subscriber to add.
 		 * \return void
 		 */
-		void Subscribe(const GUID entity_id, EventQueue<T>* subscriber) {
+		void Subscribe(const eid entity_id, EventQueue<T>* subscriber) {
 			auto subs = this->subscribers.find(entity_id);
 			if (subs == this->subscribers.end()) {
 				// no subscriptions for entity, add the entity and subscriber
@@ -79,7 +79,7 @@ namespace vv {
 		 * \param const Receiver<T>* subscriber The subscriber to remove.
 		 * \return void
 		 */
-		void Unsubscribe(const GUID entity_id, EventQueue<T>* subscriber) {
+		void Unsubscribe(const eid entity_id, EventQueue<T>* subscriber) {
 			if (this->subscribers.find(entity_id) != this->subscribers.end()) {
 				this->subscribers[entity_id].remove(subscriber);
 			}
@@ -105,7 +105,7 @@ namespace vv {
 		 * \param const T* data The event data.
 		 * \return void
 		 */
-		void Emit(const GUID entity_id, std::shared_ptr<T> data) {
+		void Emit(const eid entity_id, std::shared_ptr<T> data) {
 			if (this->subscribers.find(entity_id) != this->subscribers.end()) {
 				auto subscriber_list = this->subscribers.at(entity_id);
 				for (EventQueue<T>* subscriber : subscriber_list) {
@@ -138,7 +138,7 @@ namespace vv {
 		}
 
 	private:
-		std::map<GUID, std::list<EventQueue<T>*>> subscribers;
+		std::map<eid, std::list<EventQueue<T>*>> subscribers;
 	};
 
 	template<typename T>

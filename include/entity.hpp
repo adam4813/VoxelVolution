@@ -5,10 +5,10 @@
 #include <tuple>
 #include <cstdint>
 #include "multiton.hpp"
+#include "component-update-system.hpp"
+#include "types.hpp"
 
 namespace vv {
-	typedef std::int64_t eid;
-
 	class Entity {
 	public:
 		Entity(eid id) : id(id) { }
@@ -22,6 +22,11 @@ namespace vv {
 		}
 
 		template <typename T>
+		template <typename T>
+		bool Has() {
+			return Multiton<eid, std::shared_ptr<T>>::Get(this->id) != nullptr;
+		}
+
 		std::weak_ptr<T> Get() {
 			return Multiton<eid, std::shared_ptr<T>>::Get(this->id);
 		}

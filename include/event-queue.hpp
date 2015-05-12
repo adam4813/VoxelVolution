@@ -3,15 +3,15 @@
 #include <queue>
 #include <memory>
 #include <atomic>
-#include "multiton.hpp"
+#include "types.hpp"
 
 namespace vv {
 	// Container to hold event data. This is stored in the queue rather than raw event data.
 	template <class T>
 	struct Event {
-		Event(GUID entity_id, std::shared_ptr<T> data) : entity_id(entity_id), data(data) { }
+		Event(eid entity_id, std::shared_ptr<T> data) : entity_id(entity_id), data(data) { }
 		Event(Event&& other) : entity_id(other.entity_id), data(other.data) { }
-		GUID entity_id;
+		eid entity_id;
 		std::shared_ptr<T> data;
 	};
 
@@ -29,7 +29,7 @@ namespace vv {
 			EventSystem<T>::Get()->Subscribe(this);
 		}
 		// Causes subscribing to events for only a specific entity_id.
-		EventQueue(GUID entity_id) : read_event_queue(new std::queue<Event<T>>()),
+		EventQueue(eid entity_id) : read_event_queue(new std::queue<Event<T>>()),
 			write_event_queue(new std::queue<Event<T>>()) {
 			EventSystem<T>::Get()->Subscribe(entity_id, this);
 		}
@@ -50,7 +50,7 @@ namespace vv {
 			(*write_event_queue).push(std::move(e));
 		}
 
-		virtual void On(const GUID entity_id, std::shared_ptr<T> data) { }
+		virtual void On(const eid entity_id, std::shared_ptr<T> data) { }
 		virtual void On(std::shared_ptr<T> data) { }
 	protected:
 		std::atomic<std::queue<Event<T>>*> write_event_queue;
